@@ -1,0 +1,267 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "natGatewayName": {
+            "type": "string",
+            "defaultValue": "nat-gw-1"
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "ocp-4-vnet"
+        },
+        "virtualNetworkGatewayName": {
+            "type": "string",
+            "defaultValue": "ocp-4-vpn"
+        },
+        "virtualNetworkGatewayP2SRootCert": {
+            "type": "String",
+            "defaultValue": "MIIC5jCCAc6gAwIBAgIIGTRbD5++LU0wDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAxMGVlBOIENBMB4XDTIwMTAyMzA5NDM1MVoXDTIzMTAyMzA5NDM1MVowETEPMA0GA1UEAxMGVlBOIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApgoWxaCbyGG9i1miCRpgOYoKpxgdpO0SCu104Fgbk0zrfrynavmXabkRfH6RVG2Kv202SjdWetaHdeipooRbBYrVQejRuJzcpPjKN9yzfg0miX9gr7z2uns0X+Ivq2LDRB0Mvx4K1rzQbkMjqybvVvOlXJI71frtNHHbMXBOPohfSemANo2tLQneD3eE0LuVlv9E78tfoVH90D5qq3jDwL034/AJ1jNOsvwcSTXNVYKSwtbB1yW6xzD6QzPGM/ug0Vpk9hcJVS2LZyNqjhXp90eEFdn/FIjftEbkgrlPOsSzSR3D9qOnptW0ClNrbkgiax/BAgN2TOeny91ixh3+QwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQU3IzvPjA8s6dpPv6Gm/LRo1SFqIIwDQYJKoZIhvcNAQELBQADggEBABSWn8tx7FN0ZdzMHevhHKVAa+Cb5lTomOang+8ODutsHLjVtxtRCZOHUeKh3PQ5nQ1zF2/pFlmsWJH0k43jMceQzOsOJDFDDI9yGsdtTD8GT1Zs6oCoNM5CtcJKrxstX+bJJ8EbqbnhDd8/XYk7bxXAQd0nQmPsI8Su5mZ3JRUtuy3TFynDQYW3TBqvET2vrm37sgkS/JsrXQ0DoHbUtVrYwiZBIflK2+Qu/9mfp6ZL9wlPhTefdi4/CNN3Kkw65kzsmxbSk90uyjAJAct+La0jhfyM6OtqGdKD3kzzH6BjrDUH3VXkIhNqzMRDoR3WZ8B+KXBidTqlJLNMtNJypaY="
+        },
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "Sandbox",
+                "CostAllocation": "Cost1",
+                "ContactEmail": "admin@example.com"
+            }
+        }
+    },
+    "variables": {
+         "virtualNetworkPublicIPName": "[concat(parameters('natGatewayName'),'-pip')]",
+         "natGatewayPublicIPName":"[concat(parameters('virtualNetworkName'),'-pip')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[variables('natGatewayPublicIPName')]",
+            "location": "northeurope",
+            "tags": "[parameters('resourceTags')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "ipAddress": "20.67.144.172",
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[variables('virtualNetworkPublicIPName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "ipAddress": "137.135.128.228",
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Dynamic",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/natGateways",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('natGatewayName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('natGatewayPublicIPName'))]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "idleTimeoutInMinutes": 4,
+                "publicIpAddresses": [
+                    {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('natGatewayPublicIPName'))]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('virtualNetworkName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "ocp-4-worker-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/24",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+                            },
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.0.2.0/24",
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "ocp-4-master-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "natGateway": {
+                                "id": "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+                            },
+                            "serviceEndpoints": [],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false,
+                "enableVmProtection": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('virtualNetworkName'), '/GatewaySubnet')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.2.0/24",
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworkGateways",
+            "apiVersion": "2020-05-01",
+            "name": "[parameters('virtualNetworkGatewayName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('virtualNetworkPublicIPName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'GatewaySubnet')]"
+            ],
+            "properties": {
+                "enablePrivateIpAddress": false,
+                "ipConfigurations": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('virtualNetworkPublicIPName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'GatewaySubnet')]"
+                            }
+                        }
+                    }
+                ],
+                "sku": {
+                    "name": "VpnGw1",
+                    "tier": "VpnGw1"
+                },
+                "gatewayType": "Vpn",
+                "vpnType": "RouteBased",
+                "enableBgp": false,
+                "activeActive": false,
+                "vpnClientConfiguration": {
+                    "vpnClientAddressPool": {
+                        "addressPrefixes": [
+                            "172.16.0.0/24"
+                        ]
+                    },
+                    "vpnClientProtocols": [
+                        "OpenVPN"
+                    ],
+                    "vpnClientRootCertificates": [
+                        {
+                            "name": "P2SRootCert",
+                            "properties": {
+                                "publicCertData": "[parameters('virtualNetworkGatewayP2SRootCert')]"
+                            }
+                        }
+                    ],
+                    "vpnClientRevokedCertificates": [],
+                    "radiusServers": [],
+                    "vpnClientIpsecPolicies": []
+                },
+                "bgpSettings": {
+                    "asn": 65515,
+                    "bgpPeeringAddress": "10.0.2.254",
+                    "peerWeight": 0,
+                    "bgpPeeringAddresses": [
+                        {
+                            "ipconfigurationId": "[concat(resourceId('Microsoft.Network/virtualNetworkGateways', parameters('virtualNetworkGatewayName')), '/ipConfigurations/default')]",
+                            "customBgpIpAddresses": []
+                        }
+                    ]
+                },
+                "vpnGatewayGeneration": "Generation1"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-master-subnet')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "natGateway": {
+                    "id": "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+                },
+                "serviceEndpoints": [],
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-worker-subnet')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "10.0.1.0/24",
+                "natGateway": {
+                    "id": "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
+                },
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        }
+    ]
+}

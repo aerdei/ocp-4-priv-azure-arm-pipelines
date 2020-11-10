@@ -1,0 +1,78 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "identityName": {
+            "type": "String"
+        },
+        "networkResourceGroup": {
+            "type": "String"
+        },
+        "roleAssignmentDeployGuid": {
+            "type": "string",
+            "defaultValue": "[newGuid()]"
+        },
+        "roleAssignmentNetworkGuid": {
+            "type": "string",
+            "defaultValue": "[newGuid()]"
+        },
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "Sandbox",
+                "CostAllocation": "Cost1",
+                "ContactEmail": "admin@example.com"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[parameters('identityName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope"
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "dependsOn": [ "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]" ],
+            "name": "[parameters('roleAssignmentDeployGuid')]",
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')),'2018-11-30','full').properties.principalId]",
+                "scope": "[resourceGroup().id]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-06-01",
+            "dependsOn": [ "[resourceId(resourceGroup().name,'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName'))]" ],
+            "name": "nestedDeployment",
+            "resourceGroup": "[parameters('networkResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[parameters('roleAssignmentNetworkGuid')]",
+                            "properties": {
+                                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                                "principalId": "[reference(resourceId(resourceGroup().name,'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')),'2018-11-30','full').properties.principalId]",
+                                "scope": "[concat('/subscriptions/', subscription().subscriptionId,'/resourcegroups/',parameters('networkResourceGroup'))]"
+                            }
+                        }
+
+                    ]
+
+                }
+            }
+
+        }
+    ]
+}

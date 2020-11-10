@@ -1,0 +1,138 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dnsForwarderName": {
+            "defaultValue": "dns-forwarder",
+            "type": "String"
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the VNET"
+            },
+            "defaultValue": "ocp-4-vnet"
+
+        },
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "Sandbox",
+                "CostAllocation": "Cost1",
+                "ContactEmail": "admin@example.com"
+            }
+        },
+        "sshKey": {
+            "type": "string",
+            "defaultValue": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCaxfJ1yePdRM64HAZVPCr7+Wt2685N2kDhxopqOz/W/kPv66lmzjp0zk+H/mQQjnXoq6uI3k/lXX5wn2ctpQProQW6RNbRSQ2CsOMvYsl+AH5IoZPNAY5tyB/Lwkn6O56+3aZctc2UdHF52aVufmnI47NPgVVm39WAHNW/VV4JNWxvT7rM1+ajDOVYNVJfZvS84Nom9VeUhbV+u0jhp1BDhUNwqQuaYd6WercjRqkbhkZfKF+aDCeHIvE1sAlsuj4JhfuInkeQYBzZU2VVoMJnXivc61BkFAA0Q2TKipGwLhjFDuXK2L+j8DOkAkTV7tX6jtwbIkBlYn9St2LAbBhOvGECjH8N+yks00Dn3QoplVGAUvUO1DEIpLRUbQRHFYO+8uwkygouCNtHKvSsN2yaLMQ/YqECOiMWPby4HZEGgumseHRE7K6vTzJVfbKNNA+/hPB0lisYHWSTk3EHsnYGGu1D7oddQ8X3qQYy5whoiIgixCM02UefCPynZUvO0p0= aerdei@DESKTOP-3HHGD3V"
+        }
+    },
+    "variables": {
+        "virtualNetworkID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+        "sshKey": {
+            "publicKeys": [
+                {
+                    "path": "/home/azureuser/.ssh/authorized_keys",
+                    "keyData": "[parameters('sshKey')]"
+                }
+            ]
+        },
+        "customdata": "#cloud-config\n# vim: syntax=yaml\npackages:\n  - bind9\nwrite_files:\n  - content: |\n      acl goodclients {\n          172.16.0.0/24;\n          10.0.0.0/16;\n          localhost;\n          localnets;\n      };\n      options {\n              directory \"/var/cache/bind\";\n              recursion yes;\n              allow-query { goodclients; };\n              forwarders {\n                  168.63.129.16;\n              };\n              forward only;\n              #dnssec-validation auto;\n              auth-nxdomain no;    # conform to RFC1035\n              listen-on { any; };\n      };\n    path: /etc/bind/named.conf.options\nruncmd:\n  - [ systemctl, restart, bind9.service ]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('virtualNetworkName'), '/dns-forwarder-subnet')]",
+            "properties": {
+                "addressPrefix": "10.0.5.0/24",
+                "serviceEndpoints": [],
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('dnsForwarderName'),'-nic')]",
+            "tags": "[parameters('resourceTags')]",
+            "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'dns-forwarder-subnet')]" ],
+            "location": "northeurope",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.0.5.3",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(variables('virtualNetworkID'), '/subnets/dns-forwarder-subnet')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "name": "[parameters('dnsForwarderName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('dnsForwarderName'),'-nic'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_A1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "18.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(parameters('dnsForwarderName'), '_OSDisk')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        },
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('dnsForwarderName')]",
+                    "adminUsername": "azureuser",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": "[variables('sshKey')]",
+                        "provisionVMAgent": true
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true,
+                    "customData": "[base64(variables('customData'))]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('dnsForwarderName'),'-nic'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

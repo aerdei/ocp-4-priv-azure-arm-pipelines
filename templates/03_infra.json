@@ -1,0 +1,281 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Base name to be used in resource names (usually the cluster's Infra ID)"
+      }
+    },
+    "privateDNSZoneName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the private DNS zone"
+      }
+    },
+    "networkResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the resource group the VNET resides in"
+      }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the VNET"
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Sandbox",
+        "CostAllocation": "Cost1",
+        "ContactEmail": "admin@example.com"
+      }
+    },
+    "vhdBlobURL": {
+      "type": "string",
+      "metadata": {
+        "description": "URL pointing to the blob where the VHD to be used to create master and worker machines is located"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "clusterNsgName": "[concat(parameters('baseName'), '-nsg')]",
+    "virtualNetworkID": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+    "masterSubnetName": "ocp-4-master-subnet",
+    "masterSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', variables('masterSubnetName'))]",
+    "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
+    "internalLoadBalancerID": "[resourceId('Microsoft.Network/loadBalancers', variables('internalLoadBalancerName'))]",
+    "skuName": "Standard",
+    "imageName": "[concat(parameters('baseName'), '-image')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-06-01",
+      "type": "Microsoft.Compute/images",
+      "name": "[variables('imageName')]",
+      "location": "[variables('location')]",
+      "tags": "[parameters('resourceTags')]",
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux",
+            "osState": "Generalized",
+            "blobUri": "[parameters('vhdBlobURL')]",
+            "storageAccountType": "Standard_LRS"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('clusterNsgName')]",
+      "tags": "[parameters('resourceTags')]",
+      "apiVersion": "2018-10-01",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "apiserver_in",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "6443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 101,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2018-12-01",
+      "type": "Microsoft.Network/loadBalancers",
+      "name": "[variables('internalLoadBalancerName')]",
+      "tags": "[parameters('resourceTags')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "[variables('skuName')]"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "internal-lb-ip",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('masterSubnetRef')]"
+              },
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "internal-lb-backend"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "api-internal",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/frontendIPConfigurations/internal-lb-ip')]"
+              },
+              "frontendPort": 6443,
+              "backendPort": 6443,
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 30,
+              "protocol": "Tcp",
+              "enableTcpReset": false,
+              "loadDistribution": "Default",
+              "backendAddressPool": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/backendAddressPools/internal-lb-backend')]"
+              },
+              "probe": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/probes/api-internal-probe')]"
+              }
+            }
+          },
+          {
+            "name": "sint",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/frontendIPConfigurations/internal-lb-ip')]"
+              },
+              "frontendPort": 22623,
+              "backendPort": 22623,
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 30,
+              "protocol": "Tcp",
+              "enableTcpReset": false,
+              "loadDistribution": "Default",
+              "backendAddressPool": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/backendAddressPools/internal-lb-backend')]"
+              },
+              "probe": {
+                "id": "[concat(variables('internalLoadBalancerID'), '/probes/sint-probe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "api-internal-probe",
+            "properties": {
+              "protocol": "Https",
+              "port": 6443,
+              "requestPath": "/readyz",
+              "intervalInSeconds": 10,
+              "numberOfProbes": 3
+            }
+          },
+          {
+            "name": "sint-probe",
+            "properties": {
+              "protocol": "Https",
+              "port": 22623,
+              "requestPath": "/healthz",
+              "intervalInSeconds": 10,
+              "numberOfProbes": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2018-09-01",
+      "name": "[parameters('privateDNSZoneName')]",
+      "tags": "[parameters('resourceTags')]",
+      "location": "global",
+      "properties": {
+        "maxNumberOfRecordSets": 25000,
+        "maxNumberOfVirtualNetworkLinks": 1000,
+        "maxNumberOfVirtualNetworkLinksWithRegistration": 100,
+        "numberOfRecordSets": 1,
+        "numberOfVirtualNetworkLinks": 1,
+        "numberOfVirtualNetworkLinksWithRegistration": 0,
+        "provisioningState": "Succeeded"
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/SOA",
+      "apiVersion": "2018-09-01",
+      "name": "[concat(parameters('privateDNSZoneName'), '/@')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDNSZoneName'))]"
+      ],
+      "properties": {
+        "ttl": 3600,
+        "soaRecord": {
+          "email": "azureprivatedns-host.microsoft.com",
+          "expireTime": 2419200,
+          "host": "azureprivatedns.net",
+          "refreshTime": 3600,
+          "retryTime": 300,
+          "serialNumber": 1,
+          "minimumTtl": 10
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2018-09-01",
+      "name": "[concat(parameters('privateDNSZoneName'), '/',parameters('baseName'),'-network-link')]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDNSZoneName'))]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+        }
+      }
+    },
+    {
+      "apiVersion": "2018-09-01",
+      "type": "Microsoft.Network/privateDnsZones/A",
+      "name": "[concat(parameters('privateDNSZoneName'), '/api')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDNSZoneName'))]",
+        "[concat('Microsoft.Network/loadBalancers/', variables('internalLoadBalancerName'))]"
+      ],
+      "properties": {
+        "ttl": 60,
+        "aRecords": [
+          {
+            "ipv4Address": "[reference(variables('internalLoadBalancerName')).frontendIPConfigurations[0].properties.privateIPAddress]"
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2018-09-01",
+      "type": "Microsoft.Network/privateDnsZones/A",
+      "name": "[concat(parameters('privateDNSZoneName'), '/api-int')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDNSZoneName'))]",
+        "[concat('Microsoft.Network/loadBalancers/', variables('internalLoadBalancerName'))]"
+      ],
+      "properties": {
+        "ttl": 60,
+        "aRecords": [
+          {
+            "ipv4Address": "[reference(variables('internalLoadBalancerName')).frontendIPConfigurations[0].properties.privateIPAddress]"
+          }
+        ]
+      }
+    }
+  ]
+}
