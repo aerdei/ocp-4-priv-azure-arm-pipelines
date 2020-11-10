@@ -20,7 +20,7 @@ steps:
     azureSubscription: 'ocp-4-sa-azdo'
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
-    inlineScript: 'az ad sp list'
+    inlineScript: 'az account show'
     addSpnToEnvironment: true
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
