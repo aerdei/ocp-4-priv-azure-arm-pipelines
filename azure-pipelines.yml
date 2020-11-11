@@ -79,6 +79,7 @@ steps:
       SSH_KEY: $(ocp-4-sshkey)
 
   - task: AzureCLI@2
+    displayName: Get subscriptionId
     inputs:
       azureSubscription: "ocp-4-sa-azdo"
       scriptType: "bash"
@@ -89,7 +90,7 @@ steps:
       addSpnToEnvironment: true
 
   - task: Bash@3
-    displayName: Prepare OpenShift manifest files
+    displayName: Prepare osServicePrincipal.json
     inputs:
       targetType: "inline"
       script: |
@@ -103,7 +104,6 @@ steps:
         --arg value3 '$(ocp-4-sp-tid)' \
         '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2 | .[$key3]=$value3' <<< {} | tee osServicePrincipal.json
       failOnStderr: true
-
 
   - task: Bash@3
     displayName: Prepare OpenShift manifest files
