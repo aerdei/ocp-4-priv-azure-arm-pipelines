@@ -1,58 +1,100 @@
 trigger:
-- master
+  - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: "ubuntu-latest"
 
 parameters:
-  - name: clusterName
-    displayName: Cluster name
+  - name: azureRegion
+    displayName: Azure region
     type: string
-  - name: baseDomain
-    displayName: Base domain
-    type: string
+
   - name: networkResourceGroup
     displayName: Network resource group
     type: string
-  - name: networkName
-    displayName: Network name
-    type: string 
-  - name: sshKey
-    displayName: SSH key
+
+  - name: openShiftResourceGroup
+    displayName: OpenShift resource group
     type: string
+
   - name: ocpVersion
     displayName: OpenShift version (x.y)
     default: "4.6"
 
+  - name: clusterName
+    displayName: Cluster name
+    type: string
+
+  - name: baseDomain
+    displayName: Base domain
+    type: string
+
+  - name: networkName
+    displayName: Network name
+    type: string
+
+  - name: controlPlaneSubnet
+    displayName: Control plane subnet
+
+  - name: computeSubnet
+    displayName: Compute node subnet
+
+  - name: sshKey
+    displayName: SSH key
+    type: string
+
+  - name: pullSecret
+    displayName: Red Hat pull secret
+
 steps:
-- task: Bash@3
-  displayName: Acquire OpenShift installer
-  inputs:
-    targetType: 'inline'
-    script: 'curl --location --fail --silent --show-error https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz -o openshift-install.tar.gz' 
-    failOnStderr: true 
+  - task: Bash@3
+    displayName: Acquire OpenShift installer
+    inputs:
+      targetType: "inline"
+      script: "curl --location --fail --silent --show-error https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz -o openshift-install.tar.gz"
+      failOnStderr: true
 
-- task: ExtractFiles@1
-  inputs:
-    archiveFilePatterns: 'openshift-install.tar.gz' 
-    destinationFolder: .
-    cleanDestinationFolder: false 
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: "openshift-install.tar.gz"
+      destinationFolder: .
+      cleanDestinationFolder: false
 
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+  - task: Bash@3
+    displayName: Prepare OpenShift install config file
+    inputs:
+      targetType: "inline"
+      script: "mkdir ${{ baseDomain }}
+      envsubst < installer/install-config.bk.yaml > ${{ baseDomain }}/install-config.yaml
+      cat ${{ baseDomain }}/install-config.yaml"
+      failOnStderr: true
+    env:
+      BASE_DOMAIN: "${{ baseDomain }}"
+      CLUSTER_NAME: "${{ clusterName }}"
+      AZURE_REGION: "${{ azureRegion }}"
+      OCP_RG: "${{ openShiftResourceGroup }}"
+      VNET_RG: "${{ networkResourceGroup }}"
+      VNET_NAME: "${{ networkName }}"
+      CONTROL_PLANE_SUBNET: "${{ controlPlaneSubnet }}"
+      COMPUTE_SUBNET: "${{ computeSubnet }}"
+      PULL_SECRET: "${{ pullSecret }}"
+      SSH_KEY: "${{ sshKey }}"
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  - script: echo Hello, world!
+    displayName: "Run a one-line script"
 
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'ocp-4-sa-azdo'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: 'az account show'
-    addSpnToEnvironment: true
+  - script: |
+      echo Add other tasks to build, test, and deploy your project.
+      echo See https://aka.ms/yaml
+    displayName: "Run a multi-line script"
+
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: "az account show"
+      addSpnToEnvironment: true
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
