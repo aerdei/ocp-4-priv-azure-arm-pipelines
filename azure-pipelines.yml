@@ -81,6 +81,16 @@ steps:
       PULL_SECRET: "${{ variables.ocp-4-pullsecret }}"
       SSH_KEY: "${{ variables.ocp-4-sshkey }}"
 
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        subscriptionId=`az account show | jq .id`
+        echo "##vso[task.setvariable variable=subscriptionId;]$subscriptionId"
+      addSpnToEnvironment: true
+
 
   - task: Bash@3
     displayName: Prepare OpenShift manifest files
