@@ -28,6 +28,7 @@ steps:
 - task: Bash@3
   displayName: Acquire OpenShift installer
   inputs:
+    targetType: 'inline'
     script: 'wget -N https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-$ocpVersion/openshift-install-linux.tar.gz -o openshift-install.tar.gz' 
     failOnStderr: true 
 
