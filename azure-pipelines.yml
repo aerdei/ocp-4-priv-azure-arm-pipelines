@@ -6,6 +6,26 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+parameters:
+  - name: clusterName
+    displayName: Cluster name
+    type: string
+  - name: baseDomain
+    displayName: Base domain
+    type: string
+  - name: networkResourceGroup
+    displayName: Network resource group
+    type: string
+  - name: networkName
+    displayName: Network name
+    type: string 
+  - name: sshKey
+    displayName: SSH key
+    type: string
+  - name: ocpVersion
+    displayName: OpenShift version (x.y)
+    default: "4.6"
+
 steps:
 - script: echo Hello, world!
   displayName: 'Run a one-line script'
