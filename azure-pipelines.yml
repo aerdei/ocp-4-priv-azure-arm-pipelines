@@ -86,9 +86,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         subscriptionId=`az account show | jq -r -c .id`
-        subscriptionId=`az account show | jq -r -c .name`
         echo "##vso[task.setvariable variable=subscriptionId;]$subscriptionId"
-        echo "##vso[task.setvariable variable=subscriptionName;]$subscriptionName"
       addSpnToEnvironment: true
 
   - task: Bash@3
@@ -136,29 +134,12 @@ steps:
       script: "./openshift-install create ignition-configs  --dir=./${{ parameters.clusterName }} --log-level error"
       failOnStderr: true
 
-  - task: AzureResourceGroupDeployment@2
-    displayName: Deploy user assigned managed identity
+  - task: AzureCLI@2
+    displayName: Deploy identity
     inputs:
-      azureSubscription: "$(subscriptionName)"
-      #action: 'Create Or Update Resource Group' # Options: create Or Update Resource Group, select Resource Group, start, stop, stopWithDeallocate, restart, deletedeleteRG
-      resourceGroupName: ${{ parameters.openShiftResourceGroup }}
-      location: ${{ parameters.azureRegion }}
-      #templateLocation: 'Linked artifact' # Options: linked Artifact, uRL Of The File
-      #csmFileLink: # Required when templateLocation == URL Of The File
-      #csmParametersFileLink: # Optional
-      csmFile: ./templates/01_identity.json
-      #csmParametersFile: # Optional
-      #overrideParameters: # Optional
-      #deploymentMode: 'Incremental' # Options: Incremental, Complete, Validation
-      #enableDeploymentPrerequisites: 'None' # Optional. Options: none, configureVMwithWinRM, configureVMWithDGAgent
-      #teamServicesConnection: # Required when enableDeploymentPrerequisites == ConfigureVMWithDGAgent
-      #teamProject: # Required when enableDeploymentPrerequisites == ConfigureVMWithDGAgent
-      #deploymentGroupName: # Required when enableDeploymentPrerequisites == ConfigureVMWithDGAgent
-      #copyAzureVMTags: true # Optional
-      #runAgentServiceAsUser: # Optional
-      #userName: # Required when enableDeploymentPrerequisites == ConfigureVMWithDGAgent && RunAgentServiceAsUser == True
-      #password: # Optional
-      #outputVariable: # Optional
-      #deploymentName: # Optional
-      #deploymentOutputs: # Optional
-      #addSpnToEnvironment: false # Optional
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az deployment group create --template-file "./templates/01_identity.json" --parameters identityName="$(infra_id)-identity" --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}"
+      addSpnToEnvironment: true
