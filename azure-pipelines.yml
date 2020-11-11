@@ -78,8 +78,9 @@ steps:
       VNET_NAME: "${{ parameters.networkName }}"
       CONTROL_PLANE_SUBNET: "${{ parameters.controlPlaneSubnet }}"
       COMPUTE_SUBNET: "${{ parameters.computeSubnet }}"
-      PULL_SECRET: "${{ parameters.pullSecret }}"
-      SSH_KEY: "${{ parameters.sshKey }}"
+      PULL_SECRET: "${{ variables.ocp-4-pullsecret }}"
+      SSH_KEY: "${{ variables.ocp-4-sshkey }}"
+
 
   - task: Bash@3
     displayName: Prepare OpenShift manifest files
