@@ -64,21 +64,21 @@ steps:
     displayName: Prepare OpenShift install config file
     inputs:
       targetType: "inline"
-      script: "mkdir ${{ baseDomain }}
-      envsubst < installer/install-config.bk.yaml > ${{ baseDomain }}/install-config.yaml
-      cat ${{ baseDomain }}/install-config.yaml"
+      script: "mkdir ${{ parameters.baseDomain }}
+      envsubst < installer/install-config.bk.yaml > ${{ parameters.baseDomain }}/install-config.yaml
+      cat ${{ parameters.baseDomain }}/install-config.yaml"
       failOnStderr: true
     env:
-      BASE_DOMAIN: "${{ baseDomain }}"
-      CLUSTER_NAME: "${{ clusterName }}"
-      AZURE_REGION: "${{ azureRegion }}"
-      OCP_RG: "${{ openShiftResourceGroup }}"
-      VNET_RG: "${{ networkResourceGroup }}"
-      VNET_NAME: "${{ networkName }}"
-      CONTROL_PLANE_SUBNET: "${{ controlPlaneSubnet }}"
-      COMPUTE_SUBNET: "${{ computeSubnet }}"
-      PULL_SECRET: "${{ pullSecret }}"
-      SSH_KEY: "${{ sshKey }}"
+      BASE_DOMAIN: "${{ parameters.baseDomain }}"
+      CLUSTER_NAME: "${{ parameters.clusterName }}"
+      AZURE_REGION: "${{ parameters.azureRegion }}"
+      OCP_RG: "${{ parameters.openShiftResourceGroup }}"
+      VNET_RG: "${{ parameters.networkResourceGroup }}"
+      VNET_NAME: "${{ parameters.networkName }}"
+      CONTROL_PLANE_SUBNET: "${{ parameters.controlPlaneSubnet }}"
+      COMPUTE_SUBNET: "${{ parameters.computeSubnet }}"
+      PULL_SECRET: "${{ parameters.pullSecret }}"
+      SSH_KEY: "${{ parameters.sshKey }}"
 
   - script: echo Hello, world!
     displayName: "Run a one-line script"
