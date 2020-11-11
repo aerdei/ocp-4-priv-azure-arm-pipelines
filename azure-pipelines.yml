@@ -29,7 +29,7 @@ steps:
   displayName: Acquire OpenShift installer
   inputs:
     targetType: 'inline'
-    script: 'curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz -o openshift-install.tar.gz' 
+    script: 'curl --location --fail --silent --show-error https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz -o openshift-install.tar.gz' 
     failOnStderr: true 
 
 - task: ExtractFiles@1
