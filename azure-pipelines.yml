@@ -127,13 +127,8 @@ steps:
         echo "##vso[task.setvariable variable=infraId;]$infraId"
       failOnStderr: true
 
-  - script: echo $(infraID)
-    displayName: "Run a one-line script"
-
-  - script: |
-      echo Add other tasks to build, test, and deploy your project.
-      echo See https://aka.ms/yaml
-    displayName: "Run a multi-line script"
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+  - task: Bash@3
+    displayName: Create ignition configs
+    inputs:
+      script: |
+        ./openshift-install create ignition-configs  --dir=./${{ parameters.clusterName }} --log-level error
