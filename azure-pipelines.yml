@@ -66,8 +66,8 @@ steps:
       targetType: "inline"
       script: |
         mkdir ${{ parameters.baseDomain }}
-        envsubst < installer/install-config.bk.yaml > ${{ parameters.baseDomain }}/install-config.yaml
-        cat ${{ parameters.baseDomain }}/install-config.yaml
+        envsubst < ./installer/install-config.bk.yaml > ./${{ parameters.baseDomain }}/install-config.yaml
+        cat ./${{ parameters.baseDomain }}/install-config.yaml
       failOnStderr: true
     env:
       BASE_DOMAIN: "${{ parameters.baseDomain }}"
@@ -86,10 +86,10 @@ steps:
     inputs:
       targetType: "inline"
       script: |
-        openshift-install create manifests --dir=${{ parameters.baseDomain }}
-        rm -f ${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_master-machines-*.yaml
-        rm -f ${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
-        sed -i 's/mastersSchedulable: true/mastersSchedulable: false/g' ${{ parameters.baseDomain }}/manifests/cluster-scheduler-02-config.yml
+        ./openshift-install create manifests --dir=./${{ parameters.baseDomain }}
+        rm -f ./${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_master-machines-*.yaml
+        rm -f ./${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
+        sed -i 's/mastersSchedulable: true/mastersSchedulable: false/g' ./${{ parameters.baseDomain }}/manifests/cluster-scheduler-02-config.yml
       failOnStderr: true
       
   - task: Bash@3
@@ -97,7 +97,7 @@ steps:
     inputs:
       targetType: "inline"
       script: |
-        infraID=`grep -oP "(?<=infrastructureName: ).*" cluster-1/manifests/cluster-infrastructure-02-config.yml`
+        infraID=`grep -oP "(?<=infrastructureName: ).*" ./cluster-1/manifests/cluster-infrastructure-02-config.yml`
         echo "##vso[task.setvariable variable=infraID;]$infraID"
       failOnStderr: true
 
