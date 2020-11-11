@@ -26,7 +26,8 @@
         }
     },
     "variables": {
-        "identityName": "[concat(parameters('baseName'),'-identity')]"
+        "identityName": "[concat(parameters('baseName'),'-identity')]",
+        "location": "[resourceGroup().location]"
     },
     "resources": [
         {
@@ -34,7 +35,7 @@
             "apiVersion": "2018-11-30",
             "name": "[variables('identityName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope"
+            "location": "[variables('location')]"
         },
         {
             "type": "Microsoft.Authorization/roleAssignments",

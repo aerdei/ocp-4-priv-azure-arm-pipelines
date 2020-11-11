@@ -29,14 +29,15 @@
     },
     "variables": {
          "virtualNetworkPublicIPName": "[concat(parameters('natGatewayName'),'-pip')]",
-         "natGatewayPublicIPName":"[concat(parameters('virtualNetworkName'),'-pip')]"
+         "natGatewayPublicIPName":"[concat(parameters('virtualNetworkName'),'-pip')]",
+         "location": "[resourceGroup().location]"
     },
     "resources": [
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "apiVersion": "2020-05-01",
             "name": "[variables('natGatewayPublicIPName')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "tags": "[parameters('resourceTags')]",
             "sku": {
                 "name": "Standard"
@@ -54,7 +55,7 @@
             "apiVersion": "2020-05-01",
             "name": "[variables('virtualNetworkPublicIPName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "sku": {
                 "name": "Basic"
             },
@@ -71,7 +72,7 @@
             "apiVersion": "2020-05-01",
             "name": "[parameters('natGatewayName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', variables('natGatewayPublicIPName'))]"
             ],
@@ -92,7 +93,7 @@
             "apiVersion": "2020-05-01",
             "name": "[parameters('virtualNetworkName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
             ],
@@ -162,7 +163,7 @@
             "apiVersion": "2020-05-01",
             "name": "[parameters('virtualNetworkGatewayName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', variables('virtualNetworkPublicIPName'))]",
                 "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'GatewaySubnet')]"

@@ -15,14 +15,16 @@
             }
         }
     },
-    "variables": {},
+    "variables": {
+        "location": "[resourceGroup().location]"
+    },
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2020-08-01-preview",
             "name": "[parameters('ocp_sa_name')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"

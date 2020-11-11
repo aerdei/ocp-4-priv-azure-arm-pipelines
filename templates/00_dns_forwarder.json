@@ -29,6 +29,7 @@
     },
     "variables": {
         "virtualNetworkID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+        "location": "[resourceGroup().location]",
         "sshKey": {
             "publicKeys": [
                 {
@@ -58,7 +59,7 @@
             "name": "[concat(parameters('dnsForwarderName'),'-nic')]",
             "tags": "[parameters('resourceTags')]",
             "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'dns-forwarder-subnet')]" ],
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -86,7 +87,7 @@
             "apiVersion": "2019-07-01",
             "name": "[parameters('dnsForwarderName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "northeurope",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('dnsForwarderName'),'-nic'))]"
             ],
