@@ -1,0 +1,14 @@
+installer/openshift-install*
+installer/cluster-1
+installer/README.md
+installer/oc
+scripts/ocp_sa
+/*.json
+*.tar.gz
+*.log
+*.ign
+kube*
+*.tf*
+*.vhd
+*.zip
+azure-gw
