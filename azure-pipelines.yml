@@ -110,7 +110,7 @@ steps:
     inputs:
       targetType: "inline"
       script: |
-        ./openshift-install create manifests --dir=./${{ parameters.clusterName }}
+        ./openshift-install create manifests --dir=./${{ parameters.clusterName }} --log-level error
         rm -f ./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_master-machines-*.yaml
         rm -f ./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
         sed -i 's/mastersSchedulable: true/mastersSchedulable: false/g' ./${{ parameters.clusterName }}/manifests/cluster-scheduler-02-config.yml
