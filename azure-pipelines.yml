@@ -81,7 +81,17 @@ steps:
       PULL_SECRET: "${{ parameters.pullSecret }}"
       SSH_KEY: "${{ parameters.sshKey }}"
 
-  - script: echo Hello, world!
+  - task: Bash@3
+    displayName: Prepare OpenShift manifest files
+    inputs:
+      targetType: "inline"
+      script: |
+        openshift-install create manifests --dir=${{ parameters.baseDomain }}
+        rm -f ${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_master-machines-*.yaml
+        rm -f ${{ parameters.baseDomain }}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
+        sed -i 's/mastersSchedulable: true/mastersSchedulable: false/g' ${{ parameters.baseDomain }}/manifests/cluster-scheduler-02-config.yml
+      failOnStderr: true
+      
     displayName: "Run a one-line script"
 
   - script: |
