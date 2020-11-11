@@ -130,5 +130,6 @@ steps:
   - task: Bash@3
     displayName: Create ignition configs
     inputs:
+      targetType: "inline"
       script: "./openshift-install create ignition-configs  --dir=./${{ parameters.clusterName }} --log-level error"
       failOnStderr: true
