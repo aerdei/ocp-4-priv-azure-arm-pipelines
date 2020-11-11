@@ -91,6 +91,22 @@ steps:
         echo "##vso[task.setvariable variable=subscriptionId;]$subscriptionId"
       addSpnToEnvironment: true
 
+  - task: Bash@3
+    displayName: Prepare OpenShift manifest files
+    inputs:
+      targetType: "inline"
+      script: |
+        jq --arg key0 'subscriptionId' \
+        --arg value0 '${{ variables.subscriptionId }}' \
+        --arg key1 'clientId'   \
+        --arg value1 '${{ variables.ocp-4-sp-id }}' \
+        --arg key2 'clientSecret'  \
+        --arg value2 '${{ variables.ocp-4-sp-pq }}' \
+        --arg key3 'tenantId' \
+        --arg value3 '${{ variables.ocp-4-sp-tid }}' \
+        '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2 | .[$key3]=$value3' <<< {} | tee osServicePrincipal.json
+      failOnStderr: true
+
 
   - task: Bash@3
     displayName: Prepare OpenShift manifest files
