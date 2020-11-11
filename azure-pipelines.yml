@@ -64,7 +64,10 @@ steps:
     displayName: Prepare OpenShift install config file
     inputs:
       targetType: "inline"
-      script: "mkdir ${{ parameters.baseDomain }} && envsubst < installer/install-config.bk.yaml > ${{ parameters.baseDomain }}/install-config.yaml && cat ${{ parameters.baseDomain }}/install-config.yaml"
+      script: |
+        mkdir ${{ parameters.baseDomain }}
+        envsubst < installer/install-config.bk.yaml > ${{ parameters.baseDomain }}/install-config.yaml
+        cat ${{ parameters.baseDomain }}/install-config.yaml
       failOnStderr: true
     env:
       BASE_DOMAIN: "${{ parameters.baseDomain }}"
