@@ -35,5 +35,5 @@ platform:
     computeSubnet: $COMPUTE_SUBNET
 publish: Internal
 credentialsMode: Passthrough
-pullSecret: $PULL_SECRET
-sshKey: $SSH_KEY
+pullSecret: '$PULL_SECRET'
+sshKey: '$SSH_KEY'
