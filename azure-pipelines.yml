@@ -97,7 +97,7 @@ steps:
         --arg key1 'clientId'   \
         --arg value1 '$(ocp-4-sp-id)' \
         --arg key2 'clientSecret'  \
-        --arg value2 '$(ocp-4-sp-pq)' \
+        --arg value2 '$(ocp-4-sp-pw)' \
         --arg key3 'tenantId' \
         --arg value3 '$(ocp-4-sp-tid)' \
         '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2 | .[$key3]=$value3' <<< {} | tee osServicePrincipal.json
