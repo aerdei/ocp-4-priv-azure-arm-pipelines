@@ -51,6 +51,7 @@ steps:
       failOnStderr: true
 
   - task: ExtractFiles@1
+    displayName: Extract OpenShift installer
     inputs:
       archiveFilePatterns: "openshift-install.tar.gz"
       destinationFolder: .
