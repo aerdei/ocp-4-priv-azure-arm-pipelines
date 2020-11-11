@@ -27,6 +27,18 @@ parameters:
     default: "4.6"
 
 steps:
+- task: Bash@3
+  displayName: Acquire OpenShift installer
+  inputs:
+    script: 'wget -N https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-$ocpVersion/openshift-install-linux.tar.gz -o openshift-install.tar.gz' 
+    failOnStderr: true 
+
+- task: ExtractFiles@1
+  inputs:
+    archiveFilePatterns: 'openshift-install.tar.gz' 
+    destinationFolder: .
+    cleanDestinationFolder: false 
+
 - script: echo Hello, world!
   displayName: 'Run a one-line script'
 
