@@ -141,5 +141,5 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az deployment group create --template-file "./templates/01_identity.json" --parameters baseName="$(infra_id)" --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}"
+        az deployment group create --template-file "./templates/01_identity.json" --parameters baseName='$(infraId)' --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}"
       addSpnToEnvironment: true
