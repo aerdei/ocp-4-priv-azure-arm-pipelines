@@ -2,9 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "ocp_sa_name": {
-            "defaultValue": "ocpsa872435",
-            "type": "string"
+        "baseName": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "Base name to be used in resource names (usually the cluster's Infra ID)"
+            }
         },
         "resourceTags": {
             "type": "object",
@@ -13,16 +16,31 @@
                 "CostAllocation": "Cost1",
                 "ContactEmail": "admin@example.com"
             }
+        },
+        "storageAccountID": {
+            "defaultValue": "[uniqueString(newGuid())]",
+            "type": "String"
         }
     },
     "variables": {
-        "location": "[resourceGroup().location]"
+        "location": "[resourceGroup().location]",
+        "ocpStorageAccountName": "[take(toLower(concat(replace(parameters('baseName'),'-', ''),parameters('storageAccountID'))),24)]"
+    },
+    "outputs": {
+        "storageAccountName": {
+            "value": "[variables('ocpStorageAccountName')]",
+            "type": "string"
+        },
+        "storageAccountKey": {
+            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName')), '2019-06-01').keys[0].value]",
+            "type": "string"
+        }
     },
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2020-08-01-preview",
-            "name": "[parameters('ocp_sa_name')]",
+            "name": "[variables('ocpStorageAccountName')]",
             "tags": "[parameters('resourceTags')]",
             "location": "[variables('location')]",
             "sku": {
@@ -56,9 +74,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "sku": {
                 "name": "Standard_LRS",
@@ -76,9 +94,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "sku": {
                 "name": "Standard_LRS",
@@ -93,9 +111,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/queueServices",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "properties": {
                 "cors": {
@@ -106,9 +124,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/tableServices",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "properties": {
                 "cors": {
@@ -119,10 +137,10 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default/files')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default/files')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('ocp_sa_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('ocpStorageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "properties": {
                 "defaultEncryptionScope": "$account-encryption-key",
@@ -133,10 +151,10 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('ocp_sa_name'), '/default/vhd')]",
+            "name": "[concat(variables('ocpStorageAccountName'), '/default/vhd')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('ocp_sa_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('ocp_sa_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('ocpStorageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('ocpStorageAccountName'))]"
             ],
             "properties": {
                 "defaultEncryptionScope": "$account-encryption-key",
