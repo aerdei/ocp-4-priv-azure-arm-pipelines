@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "natGatewayName": {
@@ -15,7 +15,7 @@
             "defaultValue": "ocp-4-vpn"
         },
         "virtualNetworkGatewayP2SRootCert": {
-            "type": "String",
+            "type": "string",
             "defaultValue": "MIIC5jCCAc6gAwIBAgIIGTRbD5++LU0wDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAxMGVlBOIENBMB4XDTIwMTAyMzA5NDM1MVoXDTIzMTAyMzA5NDM1MVowETEPMA0GA1UEAxMGVlBOIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApgoWxaCbyGG9i1miCRpgOYoKpxgdpO0SCu104Fgbk0zrfrynavmXabkRfH6RVG2Kv202SjdWetaHdeipooRbBYrVQejRuJzcpPjKN9yzfg0miX9gr7z2uns0X+Ivq2LDRB0Mvx4K1rzQbkMjqybvVvOlXJI71frtNHHbMXBOPohfSemANo2tLQneD3eE0LuVlv9E78tfoVH90D5qq3jDwL034/AJ1jNOsvwcSTXNVYKSwtbB1yW6xzD6QzPGM/ug0Vpk9hcJVS2LZyNqjhXp90eEFdn/FIjftEbkgrlPOsSzSR3D9qOnptW0ClNrbkgiax/BAgN2TOeny91ixh3+QwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQU3IzvPjA8s6dpPv6Gm/LRo1SFqIIwDQYJKoZIhvcNAQELBQADggEBABSWn8tx7FN0ZdzMHevhHKVAa+Cb5lTomOang+8ODutsHLjVtxtRCZOHUeKh3PQ5nQ1zF2/pFlmsWJH0k43jMceQzOsOJDFDDI9yGsdtTD8GT1Zs6oCoNM5CtcJKrxstX+bJJ8EbqbnhDd8/XYk7bxXAQd0nQmPsI8Su5mZ3JRUtuy3TFynDQYW3TBqvET2vrm37sgkS/JsrXQ0DoHbUtVrYwiZBIflK2+Qu/9mfp6ZL9wlPhTefdi4/CNN3Kkw65kzsmxbSk90uyjAJAct+La0jhfyM6OtqGdKD3kzzH6BjrDUH3VXkIhNqzMRDoR3WZ8B+KXBidTqlJLNMtNJypaY="
         },
         "resourceTags": {
