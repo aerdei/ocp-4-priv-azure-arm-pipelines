@@ -1,31 +1,31 @@
 {
-  "$schema" : "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion" : "1.0.0.0",
-  "parameters" : {
-    "baseName" : {
-      "type" : "string",
-      "minLength" : 1,
-      "metadata" : {
-        "description" : "Base name to be used in resource names (usually the cluster's Infra ID)"
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Base name to be used in resource names (usually the cluster's Infra ID)"
       }
     },
-    "bootstrapIgnition" : {
-      "type" : "string",
-      "minLength" : 1,
-      "metadata" : {
-        "description" : "Bootstrap ignition content for the bootstrap cluster"
+    "bootstrapIgnition": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Bootstrap ignition content for the bootstrap cluster"
       }
     },
-    "sshKeyData" : {
-      "type" : "securestring",
-      "metadata" : {
-        "description" : "SSH RSA public key file as a string."
+    "sshKeyData": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SSH RSA public key file as a string."
       }
     },
-    "bootstrapVMSize" : {
-      "type" : "string",
-      "defaultValue" : "Standard_D4s_v3",
-      "allowedValues" : [
+    "bootstrapVMSize": {
+      "type": "string",
+      "defaultValue": "Standard_D4s_v3",
+      "allowedValues": [
         "Standard_A2",
         "Standard_A3",
         "Standard_A4",
@@ -93,63 +93,68 @@
         "Standard_D4s_v3",
         "Standard_D8s_v3"
       ],
-      "metadata" : {
-        "description" : "The size of the Bootstrap Virtual Machine"
+      "metadata": {
+        "description": "The size of the Bootstrap Virtual Machine"
       }
     },
-    "networkResourceGroupName" : {
-      "type" : "string",
-      "metadata" : {
-        "description" : "Name of the resource group the VNET resides in"
+    "networkResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the resource group the VNET resides in"
       }
     },
-    "virtualNetworkName" : {
-      "type" : "string",
-      "metadata" : {
-        "description" : "Name of the VNET"
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the VNET"
       }
     },
     "resourceTags": {
       "type": "object",
       "defaultValue": {
-          "Environment": "Sandbox",
-          "CostAllocation": "Cost1",
-          "ContactEmail": "admin@example.com"
+        "Environment": "Sandbox",
+        "CostAllocation": "Cost1",
+        "ContactEmail": "admin@example.com"
+      }
+    },
+    "controlPlaneSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the control plane subnet"
       }
     }
   },
-  "variables" : {
-    "location" : "[resourceGroup().location]",
-    "virtualNetworkID" : "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-    "masterSubnetName" : "ocp-4-master-subnet",
-    "masterSubnetRef" : "[concat(variables('virtualNetworkID'), '/subnets/', variables('masterSubnetName'))]",
-    "internalLoadBalancerName" : "[concat(parameters('baseName'), '-internal-lb')]",
-    "sshKeyPath" : "/home/core/.ssh/authorized_keys",
-    "identityName" : "[concat(parameters('baseName'), '-identity')]",
-    "vmName" : "[concat(parameters('baseName'), '-bootstrap')]",
-    "nicName" : "[concat(variables('vmName'), '-nic')]",
-    "imageName" : "[concat(parameters('baseName'), '-image')]"
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "virtualNetworkID": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+    "controlPlaneSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', parameters('controlPlaneSubnetName'))]",
+    "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
+    "sshKeyPath": "/home/core/.ssh/authorized_keys",
+    "identityName": "[concat(parameters('baseName'), '-identity')]",
+    "vmName": "[concat(parameters('baseName'), '-bootstrap')]",
+    "nicName": "[concat(variables('vmName'), '-nic')]",
+    "imageName": "[concat(parameters('baseName'), '-image')]"
   },
-  "resources" : [
+  "resources": [
     {
-      "apiVersion" : "2018-06-01",
-      "type" : "Microsoft.Network/networkInterfaces",
-      "name" : "[variables('nicName')]",
+      "apiVersion": "2018-06-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('nicName')]",
       "tags": "[parameters('resourceTags')]",
-      "location" : "[variables('location')]",
-      "dependsOn" : [],
-      "properties" : {
-        "ipConfigurations" : [
+      "location": "[variables('location')]",
+      "dependsOn": [],
+      "properties": {
+        "ipConfigurations": [
           {
-            "name" : "pipConfig",
-            "properties" : {
-              "privateIPAllocationMethod" : "Dynamic",
-              "subnet" : {
-                "id" : "[variables('masterSubnetRef')]"
+            "name": "pipConfig",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('controlPlaneSubnetRef')]"
               },
-              "loadBalancerBackendAddressPools" : [
+              "loadBalancerBackendAddressPools": [
                 {
-                  "id" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('internalLoadBalancerName'), '/backendAddressPools/internal-lb-backend')]"
+                  "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('internalLoadBalancerName'), '/backendAddressPools/internal-lb-backend')]"
                 }
               ]
             }
@@ -158,58 +163,58 @@
       }
     },
     {
-      "apiVersion" : "2018-06-01",
-      "type" : "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "type": "Microsoft.Compute/virtualMachines",
       "tags": "[parameters('resourceTags')]",
-      "name" : "[variables('vmName')]",
-      "location" : "[variables('location')]",
-      "identity" : {
-        "type" : "UserAssigned",
-        "userAssignedIdentities" : {
-          "[resourceID('Microsoft.ManagedIdentity/userAssignedIdentities/', variables('identityName'))]" : {}
+      "name": "[variables('vmName')]",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceID('Microsoft.ManagedIdentity/userAssignedIdentities/', variables('identityName'))]": {}
         }
       },
-      "dependsOn" : [
+      "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
       ],
-      "properties" : {
-        "hardwareProfile" : {
-          "vmSize" : "[parameters('bootstrapVMSize')]"
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('bootstrapVMSize')]"
         },
-        "osProfile" : {
-          "computerName" : "[variables('vmName')]",
-          "adminUsername" : "core",
-          "customData" : "[parameters('bootstrapIgnition')]",
-          "linuxConfiguration" : {
-            "disablePasswordAuthentication" : true,
-            "ssh" : {
-              "publicKeys" : [
+        "osProfile": {
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "core",
+          "customData": "[parameters('bootstrapIgnition')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
                 {
-                  "path" : "[variables('sshKeyPath')]",
-                  "keyData" : "[parameters('sshKeyData')]"
+                  "path": "[variables('sshKeyPath')]",
+                  "keyData": "[parameters('sshKeyData')]"
                 }
               ]
             }
           }
         },
-        "storageProfile" : {
+        "storageProfile": {
           "imageReference": {
             "id": "[resourceId('Microsoft.Compute/images', variables('imageName'))]"
           },
-          "osDisk" : {
+          "osDisk": {
             "name": "[concat(variables('vmName'),'_OSDisk')]",
-            "osType" : "Linux",
-            "createOption" : "FromImage",
+            "osType": "Linux",
+            "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "Premium_LRS"
             },
-            "diskSizeGB" : 100
+            "diskSizeGB": 100
           }
         },
-        "networkProfile" : {
-          "networkInterfaces" : [
+        "networkProfile": {
+          "networkInterfaces": [
             {
-              "id" : "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
             }
           ]
         }
