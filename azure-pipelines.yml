@@ -188,3 +188,14 @@ steps:
         done
       addSpnToEnvironment: true
       failOnStandardError: true
+
+  - task: AzureCLI@2
+    displayName: Upload bootstrap ignition config
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f ./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
+      addSpnToEnvironment: true
+      failOnStandardError: true
