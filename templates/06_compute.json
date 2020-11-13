@@ -128,7 +128,7 @@
     "computeSubnetName": {
       "type": "string",
       "metadata": {
-        "description": "Name of the control plane subnet"
+        "description": "Name of the compute subnet"
       }
     }
   },

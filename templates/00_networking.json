@@ -4,7 +4,7 @@
     "parameters": {
         "natGatewayName": {
             "type": "string",
-            "defaultValue": "nat-gw-1"
+            "defaultValue": "ocp-4-nat"
         },
         "virtualNetworkName": {
             "type": "string",
@@ -25,12 +25,24 @@
                 "CostAllocation": "Cost1",
                 "ContactEmail": "admin@example.com"
             }
+        },
+        "controlPlaneSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the control plane subnet"
+            }
+        },
+        "computeSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the compute subnet"
+            }
         }
     },
     "variables": {
-         "virtualNetworkPublicIPName": "[concat(parameters('natGatewayName'),'-pip')]",
-         "natGatewayPublicIPName":"[concat(parameters('virtualNetworkName'),'-pip')]",
-         "location": "[resourceGroup().location]"
+        "virtualNetworkPublicIPName": "[concat(parameters('natGatewayName'),'-pip')]",
+        "natGatewayPublicIPName": "[concat(parameters('virtualNetworkName'),'-pip')]",
+        "location": "[resourceGroup().location]"
     },
     "resources": [
         {
@@ -60,7 +72,6 @@
                 "name": "Basic"
             },
             "properties": {
-                "ipAddress": "137.135.128.228",
                 "publicIPAddressVersion": "IPv4",
                 "publicIPAllocationMethod": "Dynamic",
                 "idleTimeoutInMinutes": 4,
@@ -105,7 +116,7 @@
                 },
                 "subnets": [
                     {
-                        "name": "ocp-4-worker-subnet",
+                        "name": "[parameters('computeSubnetName')]",
                         "properties": {
                             "addressPrefix": "10.0.1.0/24",
                             "natGateway": {
@@ -126,7 +137,7 @@
                         }
                     },
                     {
-                        "name": "ocp-4-master-subnet",
+                        "name": "[parameters('controlPlaneSubnetName')]",
                         "properties": {
                             "addressPrefix": "10.0.0.0/24",
                             "natGateway": {
@@ -230,7 +241,7 @@
         {
             "type": "Microsoft.Network/virtualNetworks/subnets",
             "apiVersion": "2020-05-01",
-            "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-master-subnet')]",
+            "name": "[concat(parameters('virtualNetworkName'),'/',parameters('controlPlaneSubnetName'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
                 "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"
@@ -249,7 +260,7 @@
         {
             "type": "Microsoft.Network/virtualNetworks/subnets",
             "apiVersion": "2020-05-01",
-            "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-worker-subnet')]",
+            "name": "[concat(parameters('virtualNetworkName'), '/',parameters('computeSubnetName'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
                 "[resourceId('Microsoft.Network/natGateways', parameters('natGatewayName'))]"

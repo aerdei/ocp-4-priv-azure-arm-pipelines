@@ -23,8 +23,7 @@
             }
         },
         "sshKey": {
-            "type": "string",
-            "defaultValue": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCaxfJ1yePdRM64HAZVPCr7+Wt2685N2kDhxopqOz/W/kPv66lmzjp0zk+H/mQQjnXoq6uI3k/lXX5wn2ctpQProQW6RNbRSQ2CsOMvYsl+AH5IoZPNAY5tyB/Lwkn6O56+3aZctc2UdHF52aVufmnI47NPgVVm39WAHNW/VV4JNWxvT7rM1+ajDOVYNVJfZvS84Nom9VeUhbV+u0jhp1BDhUNwqQuaYd6WercjRqkbhkZfKF+aDCeHIvE1sAlsuj4JhfuInkeQYBzZU2VVoMJnXivc61BkFAA0Q2TKipGwLhjFDuXK2L+j8DOkAkTV7tX6jtwbIkBlYn9St2LAbBhOvGECjH8N+yks00Dn3QoplVGAUvUO1DEIpLRUbQRHFYO+8uwkygouCNtHKvSsN2yaLMQ/YqECOiMWPby4HZEGgumseHRE7K6vTzJVfbKNNA+/hPB0lisYHWSTk3EHsnYGGu1D7oddQ8X3qQYy5whoiIgixCM02UefCPynZUvO0p0= aerdei@DESKTOP-3HHGD3V"
+            "type": "string"
         }
     },
     "variables": {
