@@ -247,3 +247,17 @@ steps:
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/06_compute.json" --parameters computeIgnition="$computeIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters computeSubnetName="${{ parameters.computeSubnet }}"
       addSpnToEnvironment: true
       failOnStandardError: true
+
+  #Assuming we have connectivity to the cluster, approve compute node CSRs   
+  #- task: AzureCLI@2
+  #  displayName: Approve compute node CSRs
+  #  inputs:
+  #      azureSubscription: "ocp-4-sa-azdo"
+  #      scriptType: "bash"
+  #      scriptLocation: "inlineScript"
+  #      inlineScript: |
+  #        KUBECONFIG="`pwd`/${{ parameters.clusterName }}/auth/kubeconfig"
+  #        export KUBECONFIG
+  #        oc get csr -o go-template --template='{{range .items}}{{if  not .status}}{{printf "%s\n" .metadata.name}}{{end}}{{end}}' | xargs -i oc adm certificate approve {}
+  #      addSpnToEnvironment: true
+  #      failOnStandardError: true
