@@ -168,7 +168,7 @@ steps:
         vhdUrl=$(curl -s https://raw.githubusercontent.com/openshift/installer/release-4.6/data/data/rhcos.json | jq -r .azure.url)
         az storage blob copy start --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --destination-blob "rhcos.vhd" --destination-container vhd --source-uri "$vhdUrl"
 
-        while [ `az storage blob show --container-name vhd --name "rhcos.vhd" --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -o tsv --query properties.copy.status` != "success" ]
+        while [ `az storage blob show --container-name vhd --name "rhcos.vhd" --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY -o tsv --query properties.copy.status` != "success" ]
         do
           echo "."
           sleep 60s
