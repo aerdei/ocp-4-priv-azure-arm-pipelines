@@ -196,6 +196,19 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f ./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
+        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
       addSpnToEnvironment: true
       failOnStandardError: true
+
+  - task: AzureCLI@2
+    displayName: Deploy infrastructure components
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        vhdBlobUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c vhd -n "rhcos.vhd" -o tsv`
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/03_infra.json" --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters vhdBlobURL="$vhdBlobUrl"
+      addSpnToEnvironment: true
+      failOnStandardError: true
+
