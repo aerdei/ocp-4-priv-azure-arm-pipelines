@@ -1,41 +1,31 @@
-# OpenShift 4.6 private deployment using ARM templates
-Deployment of an internal OpenShift 4.6 cluster to Azure using ARM templates and an existing VNET relying on user defined routing.
+# OpenShift 4.6 private deployment using ARM templates and Azure Pipelines
+An Azure Pipelines driven deployment of an internal OpenShift 4.6 cluster to Azure using ARM templates and an existing VNET relying on user defined routing.
 
 ## Prerequisites
-* [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-yum)
-* [jq](https://stedolan.github.io/jq/)
-* [yq](https://github.com/mikefarah/yq)
 * [Azure subscription](portak.azure.com)
 * Proper Azure quotas discussed in the [OpenShift documentation](https://docs.openshift.com/container-platform/4.6/installing/installing_azure/installing-azure-account.html#installation-azure-limits_installing-azure-account)
 
-The installation script assumes the following:
+The installation pipeline assumes the following:
 * There is a resource group, by default `networking-rg`.
 * `networking-rg` contains a VNET, by default `ocp-4-vnet`.
-* `ocp-4-vnet` contains two subnets: `ocp-4-master-subnet` and `ocp-4-worker-subnet`.
+* `ocp-4-vnet` contains two subnets, by default `ocp-4-controlplane-subnet` and `ocp-4-compute-subnet`.
 * There is a resource group, by default `openshift-1-rg`, where the OpenShift resources will be deployed.
 * There is an Azure Service Principal with Contributor role in both resource groups and User Access Administrator role for assigning roles to the User Assigned Identity later.
-* The agent running the script is part of `ocp-4-vnet`. More details in the Connectivity section.
-* The agent running the script has internet connectivity.
-* There is an SSH key pair in `ssh-keys` directory.
-* There is a directory, by default `cluster-1`, in the `installer` directory.
-* There is an `install-config.yaml` installation configuration file in the `installer/cluster-1` directory. By default this is a copy of `installer/install-config.bk.yaml`
+* The agent running the deployment is part of `ocp-4-vnet`. More details in the Connectivity section.
+* The agent running the deployment has internet connectivity.
 
 ## Usage
-Clone the repo
-```
-git clone https://github.com/aerdei/azure-upi-private.git
-cd azure-upi-private
-```
-Create the resource groups.  
-Create the Service Principal and the assign the necessary roles.  
-Create an install folder and the install-config inside it.  
-```bash
-mkdir -p installer/cluster-1/ && cp installer/install-config.bk.yaml installer/cluster-1/install-config.yaml
-```
-Run the deployment script
-```
-bash ./scripts/deploy-ocp46-az.sh
-```
+* Create the resource groups.  
+* Create the service principal and the assign the necessary roles.  
+* Create a Service connection in Azure Pipelines with the service principal.
+* Deploy an Azure Keyvault with the following secrets:  
+    - `ocp-4-pullsecret`: Red Hat pull secret for OpenShift deployment
+    - `ocp-4-sp-id`: ID of the service principal used for deployment
+    - `ocp-4-sp-pw`: Secret of the service principal used for deployment
+    - `ocp-4-sp-tid`: Tenant ID of the service principal used for deployment
+    - `ocp-4-ssh-pub`: Public SSH key to be deployed to the nodes
+* Create a variable group `ocp-4-variable-group` in Azure Pipelines linking to the Azure Keyvault secrets.
+
 
 ## Connectivity
 The current deployment assumes no public connectivity to the cluster API and relies on user defined routing. There will be no public endpoints created. This also means that the agent deploying the cluster has to be on the VNET and must be able to resole the Azure Private DNS Zone records.  
@@ -54,7 +44,7 @@ sudo strongswan pki --pub --in "./azure-gw/${USERNAME}Key.pem" | sudo strongswan
 ```
 Deploy the `00_networking.json` ARM template that provisions the networking resources mentioned in the Prerequisites section. Make sure to use the CA Certificate generated earlier when provisioning the resources (it will take a minute):
 ```bash
-az deployment group create -g networking-rg --template-file ./templates/00_networking.json --parameters virtualNetworkGatewayP2SRootCert="$(openssl x509 -in ./azure-gw/caCert.pem -outform der | base64 -w0)"
+az deployment group create -g networking-rg --template-file ./templates/00_networking.json --parameters virtualNetworkGatewayP2SRootCert="$(openssl x509 -in ./azure-gw/caCert.pem -outform der | base64 -w0)" --parameters controlPlaneSubnetName="ocp-4-controlplane-subnet" --parameters computeSubnetName="ocp-4-compute-subnet"
 ```
 Deploy the `00_dns_forwarder.json` ARM template that provisions a DNS forwarder which makes it possible to resolve Azure Private DNS Zone records:
 ```bash
@@ -68,7 +58,7 @@ unzip -p azure-gw/vpn.zip 'OpenVPN?vpnconfig.ovpn' | CLIENTCERTIFICATE=$(cat azu
 Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and that the connection is only used for resources in Azure:
 ```bash
 nmcli con import type openvpn file ./azure-gw/azure-p2s.ovpn
-nmcli con modify azure-p2s ipv4.dns 10.0.5.3
+nmcli con modify azure-p2s ipv4.dns 10.0.5.4
 nmcli con modify azure-p2s ipv4.dns-search ${your_dns_zone}
 nmcli con modify azure-p2s ipv4.never-default yes
 ```
