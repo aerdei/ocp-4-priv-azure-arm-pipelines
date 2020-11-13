@@ -84,7 +84,7 @@ steps:
       CONTROL_PLANE_SUBNET: "${{ parameters.controlPlaneSubnet }}"
       COMPUTE_SUBNET: "${{ parameters.computeSubnet }}"
       PULL_SECRET: $(ocp-4-pullsecret)
-      SSH_KEY: $(ocp-4-sshkey)
+      SSH_KEY: $(ocp-4-ssh-pub)
 
   - task: AzureCLI@2
     displayName: Get subscriptionId
@@ -211,3 +211,15 @@ steps:
       addSpnToEnvironment: true
       failOnStandardError: true
 
+  - task: AzureCLI@2
+    displayName: Deploy bootstrap components
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        bootstrapUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -n "bootstrap.ign" -o tsv`
+        bootstrapIgnition=`jq -rcnM --arg v "3.1.0" --arg url "$bootstrapUrl" '{ignition:{version:$v,config:{replace:{source:$url}}}}' | base64 -w0`
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}"
+      addSpnToEnvironment: true
+      failOnStandardError: true
