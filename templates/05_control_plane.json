@@ -137,13 +137,18 @@
           "CostAllocation": "Cost1",
           "ContactEmail": "admin@example.com"
       }
+    },
+    "controlPlaneSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the control plane subnet"
+      }
     }
   },
   "variables" : {
     "location" : "[resourceGroup().location]",
     "virtualNetworkID" : "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-    "masterSubnetName" : "ocp-4-master-subnet",
-    "masterSubnetRef" : "[concat(variables('virtualNetworkID'), '/subnets/', variables('masterSubnetName'))]",
+    "controlPlaneSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', parameters('controlPlaneSubnetName'))]",
     "internalLoadBalancerName" : "[concat(parameters('baseName'), '-internal-lb')]",
     "sshKeyPath" : "/home/core/.ssh/authorized_keys",
     "identityName" : "[concat(parameters('baseName'), '-identity')]",
@@ -174,7 +179,7 @@
             "properties" : {
               "privateIPAllocationMethod" : "Dynamic",
               "subnet" : {
-                "id" : "[variables('masterSubnetRef')]"
+                "id" : "[variables('controlPlaneSubnetRef')]"
               },
               "loadBalancerBackendAddressPools" : [
                 {
