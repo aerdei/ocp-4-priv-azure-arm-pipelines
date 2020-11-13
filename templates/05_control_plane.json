@@ -9,19 +9,19 @@
         "description" : "Base name to be used in resource names (usually the cluster's Infra ID)"
       }
     },
-    "masterIgnition" : {
+    "controlPlaneIgnition" : {
       "type" : "string",
       "metadata" : {
-        "description" : "Ignition content for the master nodes"
+        "description" : "Ignition content for the control plane nodes"
       }
     },
-    "numberOfMasters" : {
+    "numberOfControlPlaneNodes" : {
       "type" : "int",
       "defaultValue" : 3,
-      "minValue" : 2,
-      "maxValue" : 30,
+      "minValue" : 3,
+      "maxValue" : 3,
       "metadata" : {
-        "description" : "Number of OpenShift masters to deploy"
+        "description" : "Number of OpenShift control plane nodes to deploy"
       }
     },
     "sshKeyData" : {
@@ -33,10 +33,10 @@
     "privateDNSZoneName" : {
       "type" : "string",
       "metadata" : {
-        "description" : "Name of the private DNS zone the master nodes are going to be attached to"
+        "description" : "Name of the private DNS zone the control plane nodes are going to be attached to"
       }
     },
-    "masterVMSize" : {
+    "controlPlaneNodeVMSize" : {
       "type" : "string",
       "defaultValue" : "Standard_D8s_v3",
       "allowedValues" : [
@@ -108,14 +108,14 @@
         "Standard_D8s_v3"
       ],
       "metadata" : {
-        "description" : "The size of the Master Virtual Machines"
+        "description" : "The size of the control plane Virtual Machines"
       }
     },
     "diskSizeGB" : {
       "type" : "int",
       "defaultValue" : 1024,
       "metadata" : {
-        "description" : "Size of the Master VM OS disk, in GB"
+        "description" : "Size of the control plane VM OS disk, in GB"
       }
     },
     "networkResourceGroupName" : {
@@ -156,8 +156,8 @@
     "copy" : [
       {
         "name" : "vmNames",
-        "count" :  "[parameters('numberOfMasters')]",
-        "input" : "[concat(parameters('baseName'), '-master-', copyIndex('vmNames'))]"
+        "count" :  "[parameters('numberOfControlPlaneNodes')]",
+        "input" : "[concat(parameters('baseName'), '-controlplane-', copyIndex('vmNames'))]"
       }
     ]
   },
@@ -254,12 +254,12 @@
       ],
       "properties" : {
         "hardwareProfile" : {
-          "vmSize" : "[parameters('masterVMSize')]"
+          "vmSize" : "[parameters('controlPlaneNodeVMSize')]"
         },
         "osProfile" : {
           "computerName" : "[variables('vmNames')[copyIndex()]]",
           "adminUsername" : "core",
-          "customData" : "[parameters('masterIgnition')]",
+          "customData" : "[parameters('controlPlaneIgnition')]",
           "linuxConfiguration" : {
             "disablePasswordAuthentication" : true,
             "ssh" : {
