@@ -223,3 +223,15 @@ steps:
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}"
       addSpnToEnvironment: true
       failOnStandardError: true
+  - task: AzureCLI@2
+    displayName: Deploy control plane components
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        controlPlaneIgnition=$(base64 -w0 < $cluster_install_dir/master.ign)
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/05_control_plane.json" --parameters masterIgnition="$controlPlaneIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}"
+      addSpnToEnvironment: true
+      failOnStandardError: true
+
