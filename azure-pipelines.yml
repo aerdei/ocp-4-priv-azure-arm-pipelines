@@ -198,7 +198,6 @@ steps:
       inlineScript: |
         az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
       addSpnToEnvironment: true
-      failOnStandardError: true
 
   - task: AzureCLI@2
     displayName: Deploy infrastructure components
