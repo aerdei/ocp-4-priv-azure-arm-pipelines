@@ -162,8 +162,8 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/02_storage.json" --parameters baseName='$(infraId)'
-        storageAccountName=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountName.value`
-        storageAccountKey=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountKey.value`
+        storageAccountName=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountName.value -o tsv`
+        storageAccountKey=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountKey.value -o tsv`
         echo "##vso[task.setvariable variable=storageAccountName;]$storageAccountName"
         echo "##vso[task.setvariable variable=storageAccountKey;]$storageAccountKey"
       addSpnToEnvironment: true
@@ -176,9 +176,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        echo $AZURE_STORAGE_ACCOUNT
-        echo $AZURE_STORAGE_KEY
-        vhdUrl=$(curl -s https://raw.githubusercontent.com/openshift/installer/release-4.6/data/data/rhcos.json | jq -r .azure.url)
+        vhdUrl=$(curl -s https://raw.githubusercontent.com/openshift/installer/release-4.6/data/data/rhcos.json | jq -c -r .azure.url)
         az storage blob copy start --destination-blob "rhcos.vhd" --destination-container vhd --source-uri $vhdUrl
 
         status="unknown"
