@@ -88,6 +88,7 @@ steps:
         subscriptionId=`az account show | jq -r -c .id`
         echo "##vso[task.setvariable variable=subscriptionId;]$subscriptionId"
       addSpnToEnvironment: true
+      failOnStandardError: true
 
   - task: Bash@3
     displayName: Prepare osServicePrincipal.json
@@ -143,6 +144,7 @@ steps:
       inlineScript: |
         az deployment group create --template-file "./templates/01_identity.json" --parameters baseName='$(infraId)' --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}"
       addSpnToEnvironment: true
+      failOnStandardError: true
 
   - task: AzureCLI@2
     displayName: Deploy storage
@@ -151,12 +153,13 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az deployment group create -g  --template-file "../templates/02_storage.json" --parameters baseName='$(infraId)'
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "../templates/02_storage.json" --parameters baseName='$(infraId)'
         storageAccountName=`az deployment group show "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountName.value`
         storageAccountKey=`az deployment group show "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountKey.value`
         echo "##vso[task.setvariable variable=storageAccountName;]$storageAccountName"
         echo "##vso[task.setvariable variable=storageAccountKey;]$storageAccountKey"
       addSpnToEnvironment: true
+      failOnStandardError: true
 
   - task: AzureCLI@2
     displayName: Copy VHD to blob container
@@ -178,6 +181,7 @@ steps:
           sleep 60s
         done
       addSpnToEnvironment: true
+      failOnStandardError: true
     env:
       AZURE_STORAGE_ACCOUNT: $(storageAccountName)
       AZURE_STORAGE_KEY: $(storageAccountKey)
