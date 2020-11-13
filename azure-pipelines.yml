@@ -207,7 +207,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         vhdBlobUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c vhd -n "rhcos.vhd" -o tsv`
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/03_infra.json" --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters vhdBlobURL="$vhdBlobUrl"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/03_infra.json" --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters vhdBlobURL="$vhdBlobUrl" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
       addSpnToEnvironment: true
       failOnStandardError: true
 
