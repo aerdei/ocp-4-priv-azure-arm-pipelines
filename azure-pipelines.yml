@@ -231,7 +231,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        controlPlaneIgnition=$(base64 -w0 < $cluster_install_dir/master.ign)
+        controlPlaneIgnition=$(base64 -w0 < ./${{ parameters.clusterName }}/master.ign)
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/05_control_plane.json" --parameters masterIgnition="$controlPlaneIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
       addSpnToEnvironment: true
       failOnStandardError: true
@@ -243,7 +243,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        computeIgnition=$(base64 -w0 < $cluster_install_dir/worker.ign)
+        computeIgnition=$(base64 -w0 < ./${{ parameters.clusterName }}/worker.ign)
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/06_compute.json" --parameters workerIgnition="$computeIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters computeSubnetName="${{ parameters.computeSubnet }}"
       addSpnToEnvironment: true
       failOnStandardError: true
