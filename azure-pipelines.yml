@@ -8,14 +8,17 @@ parameters:
   - name: azureRegion
     displayName: Azure region
     type: string
+    default: "northeurope"
 
   - name: networkResourceGroup
     displayName: Network resource group
     type: string
+    default: "networking-rg"
 
   - name: openShiftResourceGroup
     displayName: OpenShift resource group
     type: string
+    default: "openshift-1-rg"
 
   - name: ocpVersion
     displayName: OpenShift version (x.y)
@@ -24,20 +27,25 @@ parameters:
   - name: clusterName
     displayName: Cluster name
     type: string
+    default: "devtest"
 
   - name: baseDomain
     displayName: Base domain
     type: string
+    default: "ocp.aerdei.private"
 
   - name: networkName
     displayName: Network name
     type: string
+    default: "ocp-4-vnet"
 
   - name: controlPlaneSubnet
     displayName: Control plane subnet
+    default: "ocp-4-master-subnet"
 
   - name: computeSubnet
     displayName: Compute node subnet
+    default: "ocp-4-worker-subnet"
 
 variables:
   - group: ocp-4-variable-group
