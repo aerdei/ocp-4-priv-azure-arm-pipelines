@@ -220,7 +220,7 @@ steps:
       inlineScript: |
         bootstrapUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -n "bootstrap.ign" -o tsv`
         bootstrapIgnition=`jq -rcnM --arg v "3.1.0" --arg url "$bootstrapUrl" '{ignition:{version:$v,config:{replace:{source:$url}}}}' | base64 -w0`
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
       addSpnToEnvironment: true
       failOnStandardError: true
 
