@@ -166,7 +166,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         vhdUrl=$(curl -s https://raw.githubusercontent.com/openshift/installer/release-4.6/data/data/rhcos.json | jq -r .azure.url)
-        az storage blob copy start --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' --destination-blob "rhcos.vhd" --destination-container vhd --source-uri "$vhdUrl"
+        az storage blob copy start --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --destination-blob "rhcos.vhd" --destination-container vhd --source-uri "$vhdUrl"
 
         while [ `az storage blob show --container-name vhd --name "rhcos.vhd" --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -o tsv --query properties.copy.status` != "success" ]
         do
@@ -174,3 +174,6 @@ steps:
           sleep 60s
         done
       addSpnToEnvironment: true
+    env:
+      AZURE_STORAGE_ACCOUNT: $(storageAccountName)
+      AZURE_STORAGE_KEY: $(storageAccountKey)
