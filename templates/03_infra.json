@@ -40,14 +40,19 @@
       "metadata": {
         "description": "URL pointing to the blob where the VHD to be used to create master and worker machines is located"
       }
+    },
+    "controlPlaneSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the control plane subnet"
+      }
     }
   },
   "variables": {
     "location": "[resourceGroup().location]",
     "clusterNsgName": "[concat(parameters('baseName'), '-nsg')]",
     "virtualNetworkID": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-    "masterSubnetName": "ocp-4-master-subnet",
-    "masterSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', variables('masterSubnetName'))]",
+    "controlPlaneSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', parameters('controlPlaneSubnetName'))]",
     "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
     "internalLoadBalancerID": "[resourceId('Microsoft.Network/loadBalancers', variables('internalLoadBalancerName'))]",
     "skuName": "Standard",
@@ -111,7 +116,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[variables('masterSubnetRef')]"
+                "id": "[variables('controlPlaneSubnetRef')]"
               },
               "privateIPAddressVersion": "IPv4"
             }
