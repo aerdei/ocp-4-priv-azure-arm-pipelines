@@ -17,7 +17,7 @@ The installation pipeline assumes the following:
 ## Usage
 * Create the resource groups.  
 * Create the service principal and the assign the necessary roles.  
-* Create a Service connection in Azure Pipelines with the service principal.
+* Create a Service connection in Azure Pipelines with the service principal, by default called `ocp-4-sa-azdo`.
 * Deploy an Azure Keyvault with the following secrets:  
     - `ocp-4-pullsecret`: Red Hat pull secret for OpenShift deployment
     - `ocp-4-sp-id`: ID of the service principal used for deployment
