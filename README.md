@@ -1,8 +1,8 @@
-# OpenShift 4.6 private deployment using ARM templates and Azure Pipelines
-An Azure Pipelines driven deployment of an internal OpenShift 4.6 cluster to Azure using ARM templates and an existing VNET relying on user defined routing.
+# OpenShift 4 deployment using ARM templates and Azure Pipelines
+Azure Pipelines driven deployment of an internal OpenShift 4.6 cluster to Azure using ARM templates and an existing VNET with user defined routing.
 
 ## Prerequisites
-* [Azure subscription](portak.azure.com)
+* [Azure subscription](portal.azure.com)
 * Proper Azure quotas discussed in the [OpenShift documentation](https://docs.openshift.com/container-platform/4.6/installing/installing_azure/installing-azure-account.html#installation-azure-limits_installing-azure-account)
 
 The installation pipeline assumes the following:
