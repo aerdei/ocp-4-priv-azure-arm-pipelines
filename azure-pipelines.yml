@@ -41,11 +41,11 @@ parameters:
 
   - name: controlPlaneSubnet
     displayName: Control plane subnet
-    default: "ocp-4-master-subnet"
+    default: "ocp-4-controlplane-subnet"
 
   - name: computeSubnet
     displayName: Compute node subnet
-    default: "ocp-4-worker-subnet"
+    default: "ocp-4-compute-subnet"
 
 variables:
   - group: ocp-4-variable-group
