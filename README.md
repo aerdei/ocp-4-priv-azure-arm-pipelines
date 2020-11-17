@@ -11,6 +11,7 @@ The installation pipeline assumes the following:
 * `ocp-4-vnet` contains two subnets, by default `ocp-4-controlplane-subnet` and `ocp-4-compute-subnet`.
 * There is a resource group, by default `openshift-1-rg`, where the OpenShift resources will be deployed.
 * There is an Azure Service Principal with Contributor role in both resource groups and User Access Administrator role for assigning roles to the User Assigned Identity later.
+* Upon provisioning, the cluster nodes have internet connectivity (either through user defined routing or a NAT gateway).
 * The agent running the deployment is part of `ocp-4-vnet`. More details in the Connectivity section.
 * The agent running the deployment has internet connectivity.
 
@@ -29,7 +30,7 @@ The installation pipeline assumes the following:
 
 ## Connectivity
 The current deployment assumes no public connectivity to the cluster API and relies on user defined routing. There will be no public endpoints created. This also means that the agent deploying the cluster has to be on the VNET and must be able to resole the Azure Private DNS Zone records.  
-It is possible to deploy networking resources that allow connection to the VNET from and node connectivity to the internet. This makes it possible to deploy the cluster and test it without user defined routing or more advanced networking setups in place. To connect to the VNET, do the following:  
+It is possible to deploy networking resources that allow connection to the VNET from and node connectivity to the internet. This makes it possible to access the cluster. To connect to the VNET, do the following:  
 
 Generate certificates for the point-to-site VPN access discussed in the 
 [Azure documentation](https://docs.microsoft.com/en-us/azure/vpn-gateway/point-to-site-vpn-client-configuration-azure-cert#generate-certificates-1), for example:
@@ -58,8 +59,9 @@ unzip -p azure-gw/vpn.zip 'OpenVPN?vpnconfig.ovpn' | CLIENTCERTIFICATE=$(cat azu
 Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and that the connection is only used for resources in Azure:
 ```bash
 nmcli con import type openvpn file ./azure-gw/azure-p2s.ovpn
-nmcli con modify azure-p2s ipv4.dns 10.0.5.4
+nmcli con modify azure-p2s ipv4.dns 10.4.5.4
 nmcli con modify azure-p2s ipv4.dns-search ${your_dns_zone}
 nmcli con modify azure-p2s ipv4.never-default yes
+nmcli con up azure-p2s
 ```
-Connnect to the P2S VPN and test the connection. You should be able to start the deployment now.
+Verify that you have connectivity to the cluster.
