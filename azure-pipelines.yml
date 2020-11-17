@@ -248,7 +248,7 @@ steps:
       addSpnToEnvironment: true
       failOnStandardError: true
 
-- task: AzureCLI@2
+  - task: AzureCLI@2
     displayName: Remove bootstrap resources
     inputs:
       azureSubscription: "ocp-4-sa-azdo"
