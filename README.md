@@ -59,7 +59,7 @@ unzip -p azure-gw/vpn.zip 'OpenVPN?vpnconfig.ovpn' | CLIENTCERTIFICATE=$(cat azu
 Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and that the connection is only used for resources in Azure:
 ```bash
 nmcli con import type openvpn file ./azure-gw/azure-p2s.ovpn
-nmcli con modify azure-p2s ipv4.dns 10.0.5.4
+nmcli con modify azure-p2s ipv4.dns 10.4.5.4
 nmcli con modify azure-p2s ipv4.dns-search ${your_dns_zone}
 nmcli con modify azure-p2s ipv4.never-default yes
 nmcli con up azure-p2s
