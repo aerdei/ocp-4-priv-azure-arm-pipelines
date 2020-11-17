@@ -2,7 +2,7 @@ trigger:
   - master
 
 pool:
-  vmImage: "ubuntu-latest"
+  name: "ocp-4-agents"
 
 parameters:
   - name: azureRegion
