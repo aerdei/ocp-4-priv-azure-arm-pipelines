@@ -12,15 +12,9 @@
                 "description": "Name of the VNET"
             },
             "defaultValue": "ocp-4-vnet"
-
         },
         "resourceTags": {
-            "type": "object",
-            "defaultValue": {
-                "Environment": "Sandbox",
-                "CostAllocation": "Cost1",
-                "ContactEmail": "admin@example.com"
-            }
+            "type": "object"
         },
         "sshKey": {
             "type": "string"
@@ -37,7 +31,7 @@
                 }
             ]
         },
-        "customdata": "#cloud-config\n# vim: syntax=yaml\npackages:\n  - bind9\nwrite_files:\n  - content: |\n      acl goodclients {\n          172.16.0.0/24;\n          10.0.0.0/16;\n          localhost;\n          localnets;\n      };\n      options {\n              directory \"/var/cache/bind\";\n              recursion yes;\n              allow-query { goodclients; };\n              forwarders {\n                  168.63.129.16;\n              };\n              forward only;\n              #dnssec-validation auto;\n              auth-nxdomain no;    # conform to RFC1035\n              listen-on { any; };\n      };\n    path: /etc/bind/named.conf.options\nruncmd:\n  - [ systemctl, restart, bind9.service ]"
+        "customdata": "#cloud-config\n# vim: syntax=yaml\npackages:\n  - bind9\nwrite_files:\n  - content: |\n      acl goodclients {\n          172.16.0.0/24;\n          10.0.0.0/8;\n          localhost;\n          localnets;\n      };\n      options {\n              directory \"/var/cache/bind\";\n              recursion yes;\n              allow-query { goodclients; };\n              forwarders {\n                  168.63.129.16;\n              };\n              forward only;\n              #dnssec-validation auto;\n              auth-nxdomain no;    # conform to RFC1035\n              listen-on { any; };\n      };\n    path: /etc/bind/named.conf.options\nruncmd:\n  - [ systemctl, restart, bind9.service ]"
     },
     "resources": [
         {
@@ -45,7 +39,7 @@
             "apiVersion": "2020-05-01",
             "name": "[concat(parameters('virtualNetworkName'), '/dns-forwarder-subnet')]",
             "properties": {
-                "addressPrefix": "10.0.5.0/24",
+                "addressPrefix": "10.4.5.0/24",
                 "serviceEndpoints": [],
                 "delegations": [],
                 "privateEndpointNetworkPolicies": "Enabled",
@@ -64,8 +58,8 @@
                     {
                         "name": "ipconfig1",
                         "properties": {
-                            "privateIPAddress": "10.0.5.3",
-                            "privateIPAllocationMethod": "Dynamic",
+                            "privateIPAddress": "10.4.5.4",
+                            "privateIPAllocationMethod": "Static",
                             "subnet": {
                                 "id": "[concat(variables('virtualNetworkID'), '/subnets/dns-forwarder-subnet')]"
                             },

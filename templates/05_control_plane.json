@@ -131,12 +131,7 @@
       }
     },
     "resourceTags": {
-      "type": "object",
-      "defaultValue": {
-          "Environment": "Sandbox",
-          "CostAllocation": "Cost1",
-          "ContactEmail": "admin@example.com"
-      }
+      "type": "object"
     },
     "controlPlaneSubnetName": {
       "type": "string",
