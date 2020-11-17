@@ -208,7 +208,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign" --parameters @./templates/tags.parameters.json
+        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
       addSpnToEnvironment: true
 
   - task: AzureCLI@2
