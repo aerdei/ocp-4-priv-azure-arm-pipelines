@@ -45,11 +45,11 @@ sudo strongswan pki --pub --in "./azure-gw/${USERNAME}Key.pem" | sudo strongswan
 ```
 Deploy the `00_networking.json` ARM template that provisions the networking resources mentioned in the Prerequisites section. Make sure to use the CA Certificate generated earlier when provisioning the resources (it will take a minute):
 ```bash
-az deployment group create -g networking-rg --template-file ./templates/00_networking.json --parameters virtualNetworkGatewayP2SRootCert="$(openssl x509 -in ./azure-gw/caCert.pem -outform der | base64 -w0)" --parameters controlPlaneSubnetName="ocp-4-controlplane-subnet" --parameters computeSubnetName="ocp-4-compute-subnet"
+az deployment group create -g networking-rg --template-file ./templates/00_networking.json --parameters virtualNetworkGatewayP2SRootCert="$(openssl x509 -in ./azure-gw/caCert.pem -outform der | base64 -w0)" --parameters controlPlaneSubnetName="ocp-4-controlplane-subnet" --parameters computeSubnetName="ocp-4-compute-subnet" --parameters @./templates/tags.parameters.json
 ```
 Deploy the `00_dns_forwarder.json` ARM template that provisions a DNS forwarder which makes it possible to resolve Azure Private DNS Zone records:
 ```bash
-az deployment group create -g networking-rg --template-file ./templates/00_dns_forwarder.json --parameters sshKey="$(cat $HOME/.ssh/id_rsa.pub)"
+az deployment group create -g networking-rg --template-file ./templates/00_dns_forwarder.json --parameters sshKey="$(cat ./ssh-keys/id_rsa.pub)" --parameters @./templates/tags.parameters.json
 ```
 Download the Point-to-Site VPN configuration, customize it with the client key and certificate generated earlier. Add the DNS forwarder as DNS server:
 ```bash

@@ -162,7 +162,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az deployment group create --template-file "./templates/01_identity.json" --parameters baseName='$(infraId)' --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}"
+        az deployment group create --template-file "./templates/01_identity.json" --parameters baseName='$(infraId)' --parameters networkResourceGroup="${{ parameters.networkResourceGroup }}" -g "${{ parameters.openShiftResourceGroup }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
 
@@ -173,7 +173,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/02_storage.json" --parameters baseName='$(infraId)'
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/02_storage.json" --parameters baseName='$(infraId)' --parameters @./templates/tags.parameters.json
         storageAccountName=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountName.value -o tsv`
         storageAccountKey=`az deployment group show -g "${{ parameters.openShiftResourceGroup }}" -n 02_storage --query properties.outputs.storageAccountKey.value -o tsv`
         echo "##vso[task.setvariable variable=storageAccountName;]$storageAccountName"
@@ -208,7 +208,7 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign"
+        az storage blob upload --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -f "./${{ parameters.clusterName }}/bootstrap.ign" -n "bootstrap.ign" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
 
   - task: AzureCLI@2
@@ -219,7 +219,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         vhdBlobUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c vhd -n "rhcos.vhd" -o tsv`
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/03_infra.json" --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters vhdBlobURL="$vhdBlobUrl" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/03_infra.json" --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters vhdBlobURL="$vhdBlobUrl" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
 
@@ -232,7 +232,7 @@ steps:
       inlineScript: |
         bootstrapUrl=`az storage blob url --account-name '$(storageAccountName)' --account-key '$(storageAccountKey)' -c "files" -n "bootstrap.ign" -o tsv`
         bootstrapIgnition=`jq -rcnM --arg v "3.1.0" --arg url "$bootstrapUrl" '{ignition:{version:$v,config:{replace:{source:$url}}}}' | base64 -w0`
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/04_bootstrap.json" --parameters bootstrapIgnition="$bootstrapIgnition" --parameters sshKeyData="$(ocp-4-ssh-pub)" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
 
@@ -244,7 +244,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         controlPlaneIgnition=$(base64 -w0 < ./${{ parameters.clusterName }}/master.ign)
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/05_control_plane.json" --parameters controlPlaneIgnition="$controlPlaneIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/05_control_plane.json" --parameters controlPlaneIgnition="$controlPlaneIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
 
@@ -256,6 +256,6 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         computeIgnition=$(base64 -w0 < ./${{ parameters.clusterName }}/worker.ign)
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/06_compute.json" --parameters computeIgnition="$computeIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters computeSubnetName="${{ parameters.computeSubnet }}"
+        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/06_compute.json" --parameters computeIgnition="$computeIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters computeSubnetName="${{ parameters.computeSubnet }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
