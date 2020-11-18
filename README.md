@@ -32,7 +32,7 @@ The pipeline references the `ocp-4-agents` agent pool. Currently, the agents are
     - `ocp-4-sp-tid`: Tenant ID of the service principal used for deployment
     - `ocp-4-ssh-pub`: Public SSH key to be deployed to the nodes
 * Create a variable group `ocp-4-variable-group` in Azure Pipelines linking to the Azure Keyvault secrets.
-* Create the agent and agent pool.
+* Create the agent pool and agent.
 
 
 ## Connectivity
@@ -58,12 +58,12 @@ Deploy the `00_dns_forwarder.json` ARM template that provisions a DNS forwarder 
 ```bash
 az deployment group create -g networking-rg --template-file ./templates/00_dns_forwarder.json --parameters sshKey="$(cat ./ssh-keys/id_rsa.pub)" --parameters @./templates/tags.parameters.json
 ```
-Download the Point-to-Site VPN configuration, customize it with the client key and certificate generated earlier. Add the DNS forwarder as DNS server:
+Download the Point-to-Site VPN configuration, customize it with the client key and certificate generated earlier:
 ```bash
 curl -L "$(az network vnet-gateway vpn-client generate -g networking-rg -n ocp-4-vpn | tr -d '\"')" -o azure-gw/vpn.zip
 unzip -p azure-gw/vpn.zip 'OpenVPN?vpnconfig.ovpn' | CLIENTCERTIFICATE=$(cat azure-gw/clientCert.pem) PRIVATEKEY=$(cat azure-gw/clientKey.pem) envsubst > azure-gw/azure-p2s.ovpn
 ```
-Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and that the connection is only used for resources in Azure:
+Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and the connection is only used for resources in Azure:
 ```bash
 nmcli con import type openvpn file ./azure-gw/azure-p2s.ovpn
 nmcli con modify azure-p2s ipv4.dns 10.4.5.4
