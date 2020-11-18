@@ -2,21 +2,28 @@
 Azure Pipelines driven deployment of an internal OpenShift 4.6 cluster to Azure using ARM templates and an existing VNET with user defined routing.
 
 ## Prerequisites
-* [Azure subscription](portal.azure.com)
+### Azure
+* [Azure subscription](https://portal.azure.com)
 * Proper Azure quotas discussed in the [OpenShift documentation](https://docs.openshift.com/container-platform/4.6/installing/installing_azure/installing-azure-account.html#installation-azure-limits_installing-azure-account)
 
+### Networking
 The installation pipeline assumes the following:
 * There is a resource group, by default `networking-rg`.
-* `networking-rg` contains a VNET, by default `ocp-4-vnet`.
+* `networking-rg` contains a VNET, by default `ocp-4-vnet`, with the address space of `10.4.0.0/16`.
 * `ocp-4-vnet` contains two subnets, by default `ocp-4-controlplane-subnet` and `ocp-4-compute-subnet`.
 * There is a resource group, by default `openshift-1-rg`, where the OpenShift resources will be deployed.
 * There is an Azure Service Principal with Contributor role in both resource groups and User Access Administrator role for assigning roles to the User Assigned Identity later.
 * Upon provisioning, the cluster nodes have internet connectivity (either through user defined routing or a NAT gateway).
-* The agent running the deployment is part of `ocp-4-vnet`. More details in the Connectivity section.
+* The agent running the deployment is part of `ocp-4-vnet`.
 * The agent running the deployment has internet connectivity.
 
+### User-defined Azure Pipelines agents
+The pipeline includes tasks that use `oc` to communicate to the cluser, for example waiting for bootstrap complete. For this to work, the agent running the pipeline should be on the same VNET with the cluster. To achieve this, a [self hosted Linux agent can be used](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops).  
+The pipeline references the `ocp-4-agents` agent pool. Currently, the agents are required to have `azure-cli` and `jq` installed.  
+You can use the `00_agent.json` ARM template to deploy a self-hosted Linux agent that automatically installs the necessary tools and registers itself with the `ocp-4-agents` agent pool. 
+
 ## Usage
-* Create the resource groups.  
+* Create the resource groups and networking.  
 * Create the service principal and the assign the necessary roles.  
 * Create a Service connection in Azure Pipelines with the service principal, by default called `ocp-4-sa-azdo`.
 * Deploy an Azure Keyvault with the following secrets:  
@@ -26,6 +33,7 @@ The installation pipeline assumes the following:
     - `ocp-4-sp-tid`: Tenant ID of the service principal used for deployment
     - `ocp-4-ssh-pub`: Public SSH key to be deployed to the nodes
 * Create a variable group `ocp-4-variable-group` in Azure Pipelines linking to the Azure Keyvault secrets.
+* Create the agent pool and agent.
 
 
 ## Connectivity
@@ -51,12 +59,12 @@ Deploy the `00_dns_forwarder.json` ARM template that provisions a DNS forwarder 
 ```bash
 az deployment group create -g networking-rg --template-file ./templates/00_dns_forwarder.json --parameters sshKey="$(cat ./ssh-keys/id_rsa.pub)" --parameters @./templates/tags.parameters.json
 ```
-Download the Point-to-Site VPN configuration, customize it with the client key and certificate generated earlier. Add the DNS forwarder as DNS server:
+Download the Point-to-Site VPN configuration, customize it with the client key and certificate generated earlier:
 ```bash
 curl -L "$(az network vnet-gateway vpn-client generate -g networking-rg -n ocp-4-vpn | tr -d '\"')" -o azure-gw/vpn.zip
 unzip -p azure-gw/vpn.zip 'OpenVPN?vpnconfig.ovpn' | CLIENTCERTIFICATE=$(cat azure-gw/clientCert.pem) PRIVATEKEY=$(cat azure-gw/clientKey.pem) envsubst > azure-gw/azure-p2s.ovpn
 ```
-Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and that the connection is only used for resources in Azure:
+Import and configure the VPN connection so that DNS search is done on the forwarder IP for your zone and the connection is only used for resources in Azure:
 ```bash
 nmcli con import type openvpn file ./azure-gw/azure-p2s.ovpn
 nmcli con modify azure-p2s ipv4.dns 10.4.5.4

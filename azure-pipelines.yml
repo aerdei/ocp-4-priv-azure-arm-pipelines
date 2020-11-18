@@ -2,7 +2,7 @@ trigger:
   - master
 
 pool:
-  vmImage: "ubuntu-latest"
+  name: "ocp-4-agents"
 
 parameters:
   - name: azureRegion
@@ -247,6 +247,21 @@ steps:
         az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/05_control_plane.json" --parameters controlPlaneIgnition="$controlPlaneIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters privateDNSZoneName="${{ parameters.clusterName }}.${{ parameters.baseDomain }}" --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters controlPlaneSubnetName="${{ parameters.controlPlaneSubnet }}" --parameters @./templates/tags.parameters.json
       addSpnToEnvironment: true
       failOnStandardError: true
+
+  - task: AzureCLI@2
+    displayName: Remove bootstrap resources
+    inputs:
+      azureSubscription: "ocp-4-sa-azdo"
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        ./openshift-install wait-for bootstrap-complete  --dir=./${{ parameters.clusterName }} --log-level error
+        az vm stop -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
+        az vm deallocate -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
+        az vm delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --yes
+        az disk delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap_OSDisk" --no-wait --yes
+        az network nic delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap-nic" --no-wait
+        az storage blob delete --account-key '$(storageAccountKey)' --account-name '$(storageAccountName)' --container-name files --name bootstrap.ign
 
   - task: AzureCLI@2
     displayName: Deploy compute components
