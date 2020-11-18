@@ -18,8 +18,9 @@ The installation pipeline assumes the following:
 * The agent running the deployment has internet connectivity.
 
 ### User-defined Azure Pipelines agents
-The pipeline includes tasks that use `oc` to communicate to the cluser, like waiting for bootstrap complete. For this to work, the agent running the pipeline should be on the same VNET with the cluster. To achieve this, a (self hosted Linux agent can be used)[https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops].  
-The pipeline references the `ocp-4-agents` agent pool. Currently, the agents are required to have `azure-cli` and `jq` installed. You can use the `00_agent.json` to deploy a self-hosted Linux agent that automatically installs the necessary tools and registers itself with the pool. 
+The pipeline includes tasks that use `oc` to communicate to the cluser, for example waiting for bootstrap complete. For this to work, the agent running the pipeline should be on the same VNET with the cluster. To achieve this, a [self hosted Linux agent can be used](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops).  
+The pipeline references the `ocp-4-agents` agent pool. Currently, the agents are required to have `azure-cli` and `jq` installed.  
+You can use the `00_agent.json` ARM template to deploy a self-hosted Linux agent that automatically installs the necessary tools and registers itself with the `ocp-4-agents` agent pool. 
 
 ## Usage
 * Create the resource groups and networking.  
