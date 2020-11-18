@@ -1,0 +1,143 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ocpAgentName": {
+            "defaultValue": "ocp-4-agent",
+            "type": "string"
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the VNET"
+            },
+            "defaultValue": "ocp-4-vnet"
+        },
+        "resourceTags": {
+            "type": "object"
+        },
+        "sshKey": {
+            "type": "string"
+        },
+        "personalAccessToken": {
+            "type": "string",
+            "metadata": {
+                "description": "The personal access token for registering the agent. https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops#authenticate-with-a-personal-access-token-pat"
+            }
+        },
+        "serverUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "Server url, e.g. https://dev.azure.com/projectname. https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops#server-url"
+            }
+        }
+    },
+    "variables": {
+        "virtualNetworkID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+        "location": "[resourceGroup().location]",
+        "sshKey": {
+            "publicKeys": [
+                {
+                    "path": "/home/azureuser/.ssh/authorized_keys",
+                    "keyData": "[parameters('sshKey')]"
+                }
+            ]
+        },
+        "customdata": "[concat('#!/bin/bash\ncurl -sL https://aka.ms/InstallAzureCLIDeb | bash\napt install jq -y\nsudo -i -u azureuser bash <<EOF\nmkdir ocp-4-agent\ncd ocp-4-agent\ncurl --location --fail --silent --show-error https://vstsagentpackage.azureedge.net/agent/2.177.1/vsts-agent-linux-x64-2.177.1.tar.gz | tar -xz\n./config.sh --unattended  --url ',parameters('serverUrl'),' --auth pat --token \"',parameters('personalAccessToken'),'\" --pool ocp-4-agents --agent ocp-4-agent --acceptTeeEula --replace\nsudo ./svc.sh install\nsudo ./svc.sh start\necho \"sleep 3 && cloud-init clean\" | sudo at now\nEOF')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-agent-subnet')]",
+            "properties": {
+                "addressPrefix": "10.4.4.0/24",
+                "serviceEndpoints": [],
+                "delegations": [],
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(parameters('ocpAgentName'),'-nic')]",
+            "tags": "[parameters('resourceTags')]",
+            "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'ocp-4-agent-subnet')]" ],
+            "location": "[variables('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(variables('virtualNetworkID'), '/subnets/ocp-4-agent-subnet')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "name": "[parameters('ocpAgentName')]",
+            "tags": "[parameters('resourceTags')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('ocpAgentName'),'-nic'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_A1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "18.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(parameters('ocpAgentName'), '_OSDisk')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        },
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('ocpAgentName')]",
+                    "adminUsername": "azureuser",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": "[variables('sshKey')]",
+                        "provisionVMAgent": true
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true,
+                    "customData": "[base64(variables('customData'))]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('ocpAgentName'),'-nic'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
