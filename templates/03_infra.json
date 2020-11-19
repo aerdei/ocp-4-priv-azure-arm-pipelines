@@ -51,7 +51,7 @@
     "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
     "internalLoadBalancerID": "[resourceId('Microsoft.Network/loadBalancers', variables('internalLoadBalancerName'))]",
     "skuName": "Standard",
-    "imageName": "[concat(parameters('baseName'), '-image')]"
+    "imageName": "[parameters('baseName')]"
   },
   "resources": [
     {

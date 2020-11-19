@@ -133,7 +133,7 @@
     "computeSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', parameters('computeSubnetName'))]",
     "sshKeyPath": "/home/capi/.ssh/authorized_keys",
     "identityName": "[concat(parameters('baseName'), '-identity')]",
-    "imageName": "[concat(parameters('baseName'), '-image')]",
+    "imageName": "[parameters('baseName')]",
     "copy": [
       {
         "name": "vmNames",
