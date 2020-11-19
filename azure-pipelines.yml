@@ -270,12 +270,12 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         ./openshift-install wait-for bootstrap-complete  --dir=./${{ parameters.clusterName }} --log-level error
-        az vm stop -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
-        az vm deallocate -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
-        az vm delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --yes
-        az disk delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap_OSDisk" --no-wait --yes
-        az network nic delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap-nic" --no-wait
-        az storage blob delete --account-key '$(storageAccountKey)' --account-name '$(storageAccountName)' --container-name files --name bootstrap.ign
+        az vm stop -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --only-show-errors
+        az vm deallocate -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --only-show-errors
+        az vm delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --yes --only-show-errors
+        az disk delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap_OSDisk" --no-wait --yes --only-show-errors
+        az network nic delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap-nic" --no-wait --only-show-errors
+        az storage blob delete --account-key '$(storageAccountKey)' --account-name '$(storageAccountName)' --container-name files --name bootstrap.ign --only-show-errors
       failOnStandardError: true
 
   - task: AzureCLI@2
