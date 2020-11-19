@@ -131,10 +131,10 @@ steps:
       scriptSource: inline
       script: |
         import yaml
-        with open("openshift/99_openshift-cluster-api_worker-machineset-0.yaml") as f:
+        with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-0.yaml") as f:
             manifest = yaml.safe_load(f)
             manifest["spec"]["template"]["spec"]["providerSpec"]["value"]["tags"] = dict(tagkey2="tagvalue2")
-        with open("openshift/99_openshift-cluster-api_worker-machineset-0.yaml", "w") as f:
+        with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-0.yaml", "w") as f:
             yaml.dump(manifest,f)
       pythonInterpreter: /usr/bin/python3
       failOnStderr: true
