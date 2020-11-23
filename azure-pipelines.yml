@@ -131,13 +131,28 @@ steps:
     inputs:
       scriptSource: inline
       script: |
+        #!/usr/bin/env python3
+        """This script updates the compute machineset manifests with tags
+        found in templates/tags.parameters.json and templates/computetags.json"""
+        import json
         import yaml
         for i in range(3):
-            with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-"+str(i)+".yaml") as f:
+            with open(
+                    "./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-"
+                    + str(i) +
+                    ".yaml") as f, open("./templates/tags.parameters.json") as p, open(
+                        "./templates/computetags.json") as t:
+                tagsparams = json.load(p)
+                computetags = json.load(t)
                 manifest = yaml.safe_load(f)
-                manifest["spec"]["template"]["spec"]["providerSpec"]["value"]["tags"] = dict(tagkey2="tagvalue2")
-            with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-"+str(i)+".yaml", "w") as f:
-                yaml.dump(manifest,f)
+                manifest["spec"]["template"]["spec"]["providerSpec"]["value"][
+                    "tags"] = tagsparams["parameters"]["resourceTags"]["value"]
+                manifest["spec"]["template"]["spec"]["providerSpec"]["value"][
+                    "tags"].update(computetags)
+            with open(
+                    "openshift/99_openshift-cluster-api_worker-machineset-" + str(i) +
+                    ".yaml", "w") as f:
+                yaml.dump(manifest, f)
       pythonInterpreter: /usr/bin/python3
       failOnStderr: true
 
