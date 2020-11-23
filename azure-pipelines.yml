@@ -55,15 +55,8 @@ steps:
     displayName: Acquire OpenShift installer
     inputs:
       targetType: "inline"
-      script: "curl --location --fail --silent --show-error https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz -o openshift-install.tar.gz"
+      script: "curl --location --fail --silent --show-error https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${{ parameters.ocpVersion }}/openshift-install-linux.tar.gz | tar -xz openshift-install"
       failOnStderr: true
-
-  - task: ExtractFiles@1
-    displayName: Extract OpenShift installer
-    inputs:
-      archiveFilePatterns: "openshift-install.tar.gz"
-      destinationFolder: .
-      cleanDestinationFolder: false
 
   - task: Bash@3
     displayName: Prepare OpenShift install config file
