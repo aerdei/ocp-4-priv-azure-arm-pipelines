@@ -121,11 +121,25 @@ steps:
       script: |
         ./openshift-install create manifests --dir=./${{ parameters.clusterName }} --log-level error
         rm -f ./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_master-machines-*.yaml
-        rm -f ./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
         sed -i 's/mastersSchedulable: true/mastersSchedulable: false/g' ./${{ parameters.clusterName }}/manifests/cluster-scheduler-02-config.yml
       failOnStderr: true
     env:
       AZURE_AUTH_LOCATION: ./osServicePrincipal.json
+
+  - task: PythonScript@0
+    displayName: Add labels to compute machineSet
+    inputs:
+      scriptSource: inline
+      script: |
+        import yaml
+        for i in range(3):
+            with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-"+str(i)+".yaml") as f:
+                manifest = yaml.safe_load(f)
+                manifest["spec"]["template"]["spec"]["providerSpec"]["value"]["tags"] = dict(tagkey2="tagvalue2")
+            with open("./${{ parameters.clusterName }}/openshift/99_openshift-cluster-api_worker-machineset-"+str(i)+".yaml", "w") as f:
+                yaml.dump(manifest,f)
+      pythonInterpreter: /usr/bin/python3
+      failOnStderr: true
 
   - task: Bash@3
     displayName: Get infraId variable
@@ -249,28 +263,27 @@ steps:
       failOnStandardError: true
 
   - task: AzureCLI@2
-    displayName: Remove bootstrap resources
+    displayName: Wait for bootstrap-complete and remove bootstrap resources
     inputs:
       azureSubscription: "ocp-4-sa-azdo"
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
         ./openshift-install wait-for bootstrap-complete  --dir=./${{ parameters.clusterName }} --log-level error
-        az vm stop -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
-        az vm deallocate -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap"
-        az vm delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --yes
-        az disk delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap_OSDisk" --no-wait --yes
-        az network nic delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap-nic" --no-wait
-        az storage blob delete --account-key '$(storageAccountKey)' --account-name '$(storageAccountName)' --container-name files --name bootstrap.ign
+        az vm stop -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --only-show-errors
+        az vm deallocate -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --only-show-errors
+        az vm delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap" --yes --only-show-errors
+        az disk delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap_OSDisk" --no-wait --yes --only-show-errors
+        az network nic delete -g "${{ parameters.openShiftResourceGroup }}" --name "$(infraId)-bootstrap-nic" --no-wait --only-show-errors
+        az storage blob delete --account-key '$(storageAccountKey)' --account-name '$(storageAccountName)' --container-name files --name bootstrap.ign --only-show-errors
+      failOnStandardError: true
 
   - task: AzureCLI@2
-    displayName: Deploy compute components
+    displayName: Wait for installation to complete
     inputs:
       azureSubscription: "ocp-4-sa-azdo"
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        computeIgnition=$(base64 -w0 < ./${{ parameters.clusterName }}/worker.ign)
-        az deployment group create -g "${{ parameters.openShiftResourceGroup }}" --template-file "./templates/06_compute.json" --parameters computeIgnition="$computeIgnition" --parameters sshKeyData='$(ocp-4-ssh-pub)' --parameters baseName='$(infraId)' --parameters networkResourceGroupName="${{ parameters.networkResourceGroup }}" --parameters virtualNetworkName="${{ parameters.networkName }}" --parameters computeSubnetName="${{ parameters.computeSubnet }}" --parameters @./templates/tags.parameters.json
-      addSpnToEnvironment: true
+        ./openshift-install wait-for install-complete  --dir=./${{ parameters.clusterName }} --log-level error
       failOnStandardError: true
