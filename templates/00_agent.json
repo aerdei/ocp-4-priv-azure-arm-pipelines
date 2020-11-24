@@ -86,7 +86,7 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','ocp-4-agent-subnet')]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'),'ocp-4-agent-subnet')]"
                             },
                             "primary": true,
                             "privateIPAddressVersion": "IPv4"

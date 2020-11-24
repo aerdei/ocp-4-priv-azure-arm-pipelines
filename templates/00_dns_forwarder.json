@@ -75,7 +75,7 @@
                             "privateIPAddress": "10.4.5.4",
                             "privateIPAllocationMethod": "Static",
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','dns-forwarder-subnet')]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('virtualNetworkName'),'dns-forwarder-subnet')]"
                             },
                             "primary": true,
                             "privateIPAddressVersion": "IPv4"
