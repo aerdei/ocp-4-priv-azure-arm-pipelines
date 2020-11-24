@@ -16,8 +16,26 @@
         "resourceTags": {
             "type": "object"
         },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for the resources."
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "defaultValue": "Standard_A1_v2",
+            "metadata": {
+                "description": "Size for the Virtual Machine."
+            }
+        },
         "sshKey": {
             "type": "string"
+        },
+        "adminUsername": {
+            "type": "string",
+            "defaultValue": "azureuser"
         },
         "personalAccessToken": {
             "type": "string",
@@ -33,8 +51,6 @@
         }
     },
     "variables": {
-        "virtualNetworkID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-        "location": "[resourceGroup().location]",
         "sshKey": {
             "publicKeys": [
                 {
@@ -52,8 +68,6 @@
             "name": "[concat(parameters('virtualNetworkName'), '/ocp-4-agent-subnet')]",
             "properties": {
                 "addressPrefix": "10.4.4.0/24",
-                "serviceEndpoints": [],
-                "delegations": [],
                 "privateEndpointNetworkPolicies": "Enabled",
                 "privateLinkServiceNetworkPolicies": "Enabled"
             }
@@ -64,7 +78,7 @@
             "name": "[concat(parameters('ocpAgentName'),'-nic')]",
             "tags": "[parameters('resourceTags')]",
             "dependsOn": [ "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'ocp-4-agent-subnet')]" ],
-            "location": "[variables('location')]",
+            "location": "[parameters('location')]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -72,16 +86,13 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
-                                "id": "[concat(variables('virtualNetworkID'), '/subnets/ocp-4-agent-subnet')]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets','ocp-4-agent-subnet')]"
                             },
                             "primary": true,
                             "privateIPAddressVersion": "IPv4"
                         }
                     }
                 ],
-                "dnsSettings": {
-                    "dnsServers": []
-                },
                 "enableAcceleratedNetworking": false,
                 "enableIPForwarding": false
             }
@@ -91,13 +102,13 @@
             "apiVersion": "2019-07-01",
             "name": "[parameters('ocpAgentName')]",
             "tags": "[parameters('resourceTags')]",
-            "location": "[variables('location')]",
+            "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('ocpAgentName'),'-nic'))]"
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "Standard_A1_v2"
+                    "vmSize": "[parameters('vmSize')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -115,18 +126,16 @@
                             "storageAccountType": "StandardSSD_LRS"
                         },
                         "diskSizeGB": 30
-                    },
-                    "dataDisks": []
+                    }
                 },
                 "osProfile": {
                     "computerName": "[parameters('ocpAgentName')]",
-                    "adminUsername": "azureuser",
+                    "adminUsername": "[parameters('adminUsername')]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": "[variables('sshKey')]",
                         "provisionVMAgent": true
                     },
-                    "secrets": [],
                     "allowExtensionOperations": true,
                     "customData": "[base64(variables('customData'))]"
                 },
