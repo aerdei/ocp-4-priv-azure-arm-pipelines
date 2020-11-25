@@ -59,7 +59,7 @@
                 }
             ]
         },
-        "customdata": "[concat('#!/bin/bash\ncurl -sL https://aka.ms/InstallAzureCLIDeb | bash\napt install jq -y\nsudo -i -u azureuser bash <<EOF\nmkdir ocp-4-agent\ncd ocp-4-agent\ncurl --location --fail --silent --show-error https://vstsagentpackage.azureedge.net/agent/2.177.1/vsts-agent-linux-x64-2.177.1.tar.gz | tar -xz\n./config.sh --unattended  --url ',parameters('serverUrl'),' --auth pat --token \"',parameters('personalAccessToken'),'\" --pool ocp-4-agents --agent ocp-4-agent --acceptTeeEula --replace\nsudo ./svc.sh install\nsudo ./svc.sh start\necho \"sleep 3 && cloud-init clean\" | sudo at now\nEOF')]"
+        "customdata": "[concat('#!/bin/bash\ncurl -sL https://aka.ms/InstallAzureCLIDeb | bash\napt install jq -y\nsudo -i -u ',parameters('adminUsername'),' bash <<EOF\nmkdir ocp-4-agent\ncd ocp-4-agent\ncurl --location --fail --silent --show-error https://vstsagentpackage.azureedge.net/agent/2.177.1/vsts-agent-linux-x64-2.177.1.tar.gz | tar -xz\n./config.sh --unattended  --url ',parameters('serverUrl'),' --auth pat --token \"',parameters('personalAccessToken'),'\" --pool ocp-4-agents --agent ocp-4-agent --acceptTeeEula --replace\nsudo ./svc.sh install\nsudo ./svc.sh start\necho \"sleep 3 && cloud-init clean\" | sudo at now\nEOF')]"
     },
     "resources": [
         {

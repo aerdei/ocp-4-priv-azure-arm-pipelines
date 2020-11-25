@@ -213,16 +213,6 @@
                         }
                     ]
                 },
-                "bgpSettings": {
-                    "asn": 65515,
-                    "bgpPeeringAddress": "10.4.2.254",
-                    "peerWeight": 0,
-                    "bgpPeeringAddresses": [
-                        {
-                            "ipconfigurationId": "[reference(resourceId('Microsoft.Network/virtualNetworkGateways', parameters('virtualNetworkGatewayName'))).properties.ipConfigurations.default]"
-                        }
-                    ]
-                },
                 "vpnGatewayGeneration": "Generation1"
             }
         },
