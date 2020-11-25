@@ -15,15 +15,6 @@
         "description": "Ignition content for the control plane nodes"
       }
     },
-    "numberOfControlPlaneNodes": {
-      "type": "int",
-      "defaultValue": 3,
-      "minValue": 3,
-      "maxValue": 3,
-      "metadata": {
-        "description": "Number of OpenShift control plane nodes to deploy"
-      }
-    },
     "sshKeyData": {
       "type": "securestring",
       "metadata": {
@@ -148,6 +139,7 @@
     }
   },
   "variables": {
+    "numberOfControlPlaneNodes": 3,
     "controlPlaneSubnetRef": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('controlPlaneSubnetName'))]",
     "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
     "sshKeyPath": "/home/core/.ssh/authorized_keys",
@@ -156,7 +148,7 @@
     "copy": [
       {
         "name": "vmNames",
-        "count": "[parameters('numberOfControlPlaneNodes')]",
+        "count": "[variables('numberOfControlPlaneNodes')]",
         "input": "[concat(parameters('baseName'), '-controlplane-', copyIndex('vmNames'))]"
       }
     ]
