@@ -73,7 +73,7 @@
             "storageAccountType": "Standard_LRS"
           }
         },
-        "hyperVGeneration": "V2"
+        "hyperVGeneration": "V1"
       }
     },
     {
