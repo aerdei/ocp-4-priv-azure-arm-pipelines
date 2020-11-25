@@ -220,7 +220,7 @@
         "ttl": 60,
         "aRecords": [
           {
-            "ipv4Address": "[reference('Microsoft.Network/networkInterfaces',concat(variables('vmNames')[copyIndex()], '-nic')).ipConfigurations[0].properties.privateIPAddress]"
+            "ipv4Address": "[reference(resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNames')[copyIndex()], '-nic'))).ipConfigurations[0].properties.privateIPAddress]"
           }
         ]
       }
