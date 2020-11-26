@@ -117,12 +117,17 @@
       "metadata": {
         "description": "Name of the control plane subnet"
       }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the resources."
+      }
     }
   },
   "variables": {
-    "location": "[resourceGroup().location]",
-    "virtualNetworkID": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-    "controlPlaneSubnetRef": "[concat(variables('virtualNetworkID'), '/subnets/', parameters('controlPlaneSubnetName'))]",
+    "controlPlaneSubnetRef": "[resourceId(parameters('networkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('controlPlaneSubnetName'))]",
     "internalLoadBalancerName": "[concat(parameters('baseName'), '-internal-lb')]",
     "sshKeyPath": "/home/core/.ssh/authorized_keys",
     "identityName": "[concat(parameters('baseName'), '-identity')]",
@@ -132,12 +137,11 @@
   },
   "resources": [
     {
-      "apiVersion": "2018-06-01",
+      "apiVersion": "2020-06-01",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('nicName')]",
       "tags": "[parameters('resourceTags')]",
-      "location": "[variables('location')]",
-      "dependsOn": [],
+      "location": "[parameters('location')]",
       "properties": {
         "ipConfigurations": [
           {
@@ -149,7 +153,7 @@
               },
               "loadBalancerBackendAddressPools": [
                 {
-                  "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('internalLoadBalancerName'), '/backendAddressPools/internal-lb-backend')]"
+                  "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools',variables('internalLoadBalancerName'),'internal-lb-backend')]"
                 }
               ]
             }
@@ -158,11 +162,11 @@
       }
     },
     {
-      "apiVersion": "2018-06-01",
+      "apiVersion": "2020-06-01",
       "type": "Microsoft.Compute/virtualMachines",
       "tags": "[parameters('resourceTags')]",
       "name": "[variables('vmName')]",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
@@ -170,7 +174,7 @@
         }
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
       ],
       "properties": {
         "hardwareProfile": {
